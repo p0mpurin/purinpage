@@ -55,7 +55,7 @@ async function isDeadLink(url: string): Promise<boolean> {
         });
         clearTimeout(timeout);
 
-        if (res.status === 404) {
+        if (res.status === 404 || res.status === 410) {
             res.body?.cancel();
             return true;
         }
@@ -67,16 +67,36 @@ async function isDeadLink(url: string): Promise<boolean> {
             return true;
         }
 
-        // Read first chunk to verify there is actual content
+        // Many servers omit Content-Length (chunked) or send a non-empty first chunk later.
+        // A single read() can return done:false with an empty chunk — wrongly treated as "alive" before.
         const reader = res.body?.getReader();
-        if (reader) {
-            try {
+        if (!reader) {
+            // No body stream but request "succeeded" — treat as empty document
+            if (res.ok && res.status !== 204 && res.status !== 304) return true;
+            return false;
+        }
+
+        try {
+            let total = 0;
+            const maxSampleBytes = 65536; // cap download; any bytes here means "has content"
+            while (true) {
                 const { value, done } = await reader.read();
-                reader.cancel();
-                if (done && (!value || value.length === 0)) return true;
-            } catch {
-                // read error — assume alive to avoid false positives
+                if (done) break;
+                if (value?.length) total += value.length;
+                if (total >= maxSampleBytes) {
+                    await reader.cancel();
+                    return false;
+                }
             }
+
+            if (total > 0) return false;
+
+            // Entire body is 0 bytes: dead for "normal" pages, not for intentional no-content codes
+            const emptyMeansDead =
+                res.ok && res.status !== 204 && res.status !== 304 && res.status !== 205;
+            return emptyMeansDead;
+        } catch {
+            // read error — assume alive to avoid false positives
         }
 
         return false;
