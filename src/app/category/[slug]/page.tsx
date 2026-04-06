@@ -9,6 +9,8 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     const router = useRouter();
     const supabase = createSupabaseClient();
     const [loading, setLoading] = useState(true);
+    const [deadLinks, setDeadLinks] = useState<Set<string>>(new Set());
+    const [checking, setChecking] = useState(false);
 
     // Unwrap params using React.use()
     const { slug } = use(params);
@@ -27,6 +29,34 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         checkUser();
     }, [router, supabase]);
 
+    useEffect(() => {
+        if (loading) return;
+        const category = categoryLinks[slug];
+        if (!category) return;
+
+        const cacheKey = `dead-links:${slug}`;
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+            setDeadLinks(new Set(JSON.parse(cached)));
+            return;
+        }
+
+        setChecking(true);
+        const urls = category.links.map((l) => l.url);
+        fetch("/api/check-links", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ urls }),
+        })
+            .then((res) => res.json())
+            .then(({ dead }: { dead: string[] }) => {
+                sessionStorage.setItem(cacheKey, JSON.stringify(dead));
+                setDeadLinks(new Set(dead));
+            })
+            .catch(() => {/* silently keep all links on error */})
+            .finally(() => setChecking(false));
+    }, [loading, slug]);
+
     if (loading) {
         return (
             <div className="flex justify-center items-center h-screen">
@@ -36,6 +66,8 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     }
 
     const category = categoryLinks[slug];
+    const visibleLinks = category?.links.filter((link) => !deadLinks.has(link.url)) ?? [];
+    const removedCount = (category?.links.length ?? 0) - visibleLinks.length;
 
     if (!category) {
         return (
@@ -74,10 +106,18 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                         {category.title}
                     </h1>
                 </div>
+                {checking && (
+                    <p className="text-sm opacity-50 mt-2 animate-pulse">Checking for dead links...</p>
+                )}
+                {!checking && removedCount > 0 && (
+                    <p className="text-sm opacity-50 mt-2">
+                        {removedCount} dead link{removedCount > 1 ? "s" : ""} removed
+                    </p>
+                )}
             </header>
 
             <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-5">
-                {category.links.map((link) => (
+                {visibleLinks.map((link) => (
                     <a
                         key={link.name}
                         href={link.url}
