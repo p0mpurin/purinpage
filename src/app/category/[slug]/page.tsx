@@ -11,6 +11,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     const [loading, setLoading] = useState(true);
     const [deadLinks, setDeadLinks] = useState<Set<string>>(new Set());
     const [checking, setChecking] = useState(false);
+    const [progress, setProgress] = useState({ checked: 0, total: 0 });
 
     // Unwrap params using React.use()
     const { slug } = use(params);
@@ -35,26 +36,39 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         if (!category) return;
 
         const cacheKey = `dead-links:${slug}`;
+        void (async () => {
         const cached = sessionStorage.getItem(cacheKey);
         if (cached) {
             setDeadLinks(new Set(JSON.parse(cached)));
             return;
         }
 
+        const allUrls = category.links.map((l) => l.url);
+        const BATCH = 8;
         setChecking(true);
-        const urls = category.links.map((l) => l.url);
-        fetch("/api/check-links", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ urls }),
-        })
-            .then((res) => res.json())
-            .then(({ dead }: { dead: string[] }) => {
-                sessionStorage.setItem(cacheKey, JSON.stringify(dead));
-                setDeadLinks(new Set(dead));
-            })
-            .catch(() => {/* silently keep all links on error */})
-            .finally(() => setChecking(false));
+        setProgress({ checked: 0, total: allUrls.length });
+
+        const allDead: string[] = [];
+        for (let i = 0; i < allUrls.length; i += BATCH) {
+            const batch = allUrls.slice(i, i + BATCH);
+            try {
+                const res = await fetch("/api/check-links", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ urls: batch }),
+                });
+                const { dead }: { dead: string[] } = await res.json();
+                allDead.push(...dead);
+                setDeadLinks((prev) => new Set([...prev, ...dead]));
+            } catch {
+                // silently keep links if a batch fails
+            }
+            setProgress({ checked: Math.min(i + BATCH, allUrls.length), total: allUrls.length });
+        }
+
+        sessionStorage.setItem(cacheKey, JSON.stringify(allDead));
+        setChecking(false);
+        })();
     }, [loading, slug]);
 
     if (loading) {
@@ -107,10 +121,21 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                     </h1>
                 </div>
                 {checking && (
-                    <p className="text-sm opacity-50 mt-2 animate-pulse">Checking for dead links...</p>
+                    <div className="mt-4 flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between text-xs opacity-50 w-64">
+                            <span className="tracking-wider uppercase">Scanning links</span>
+                            <span>{progress.checked} / {progress.total}</span>
+                        </div>
+                        <div className="h-[2px] w-64 bg-white/10 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-[var(--accent-pink)] rounded-full transition-all duration-500"
+                                style={{ width: `${progress.total > 0 ? (progress.checked / progress.total) * 100 : 0}%` }}
+                            />
+                        </div>
+                    </div>
                 )}
                 {!checking && removedCount > 0 && (
-                    <p className="text-sm opacity-50 mt-2">
+                    <p className="text-xs opacity-40 mt-3 tracking-wider uppercase">
                         {removedCount} dead link{removedCount > 1 ? "s" : ""} removed
                     </p>
                 )}
