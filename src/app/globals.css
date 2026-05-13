@@ -380,6 +380,31 @@
       0 0 40px rgba(255, 182, 193, 0.2);
   }
 
+  @keyframes lain-cursor-blink {
+    0%,
+    49% {
+      opacity: 1;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .login-cursor {
+    animation: lain-cursor-blink 1.12s step-end infinite;
+    line-height: 0.85;
+  }
+
+  .login-lain {
+    font-family: inherit;
+  }
+
+  .login-lain input,
+  .login-lain button {
+    font-family: inherit;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .bubble-tile,
     .category-bubble .bubble-ring {
@@ -388,6 +413,11 @@
 
     .bubble-ring::after {
       animation: none !important;
+    }
+
+    .login-cursor {
+      animation: none !important;
+      opacity: 1;
     }
 
     * {
