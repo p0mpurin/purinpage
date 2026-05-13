@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check-links": "tsx scripts/check-dead-links.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.91.0",
@@ -25,6 +26,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

@@ -30,18 +30,20 @@ export default function Navbar() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    // Helper to determine active state
-    // Helper to determine active state
     const isActive = (path: string) => pathname === path;
 
     if (pathname === "/login") return null;
 
     return (
-        <div className={`sticky top-0 z-50 w-full transition-all duration-300 ${isScrolled ? "bg-[var(--background)]/90 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.1)] border-b border-[var(--accent-dim)]" : "bg-transparent border-b border-transparent"}`}>
+        <div
+            className={`sticky top-0 z-50 w-full border-b transition-[background,backdrop-filter,border-color] duration-500 ${isScrolled ? "border-[var(--accent-dim)] bg-[var(--background)]/85 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md" : "border-transparent bg-transparent"}`}
+        >
             <div className="p-4 md:p-8 pb-0">
                 <header className="flex flex-col md:flex-row justify-between items-center mb-4 md:mb-6 max-w-[1400px] mx-auto w-full gap-4 md:gap-0">
-                    <Link href="/" className="no-underline">
-                        <h1 className="text-2xl md:text-[2.5rem] font-bold tracking-widest text-shadow-pink text-[var(--foreground)]">WIRED/SYS</h1>
+                    <Link href="/" className="group/nav no-underline">
+                        <h1 className="text-2xl font-bold tracking-widest text-[var(--foreground)] text-shadow-pink transition-[letter-spacing,filter] duration-500 group-hover/nav:tracking-[0.55em] md:text-[2.5rem]">
+                            WIRED/SYS
+                        </h1>
                     </Link>
                     <div className="flex gap-2.5">
                         <Link
@@ -81,7 +83,7 @@ export default function Navbar() {
                     >
                         About Me
                     </Link>
-                    <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[var(--accent-pink)] to-transparent opacity-50"></div>
+                    <div className="absolute bottom-0 left-0 h-px w-full animate-[nav-line-glow_4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-[var(--accent-pink)] to-transparent opacity-60"></div>
                 </nav>
             </div>
         </div>

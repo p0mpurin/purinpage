@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createSupabaseClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import LoadingScreen from "@/components/LoadingScreen";
 
 export default function ProfilePage() {
     const [loading, setLoading] = useState(true);
@@ -27,7 +28,7 @@ export default function ProfilePage() {
                 try {
                     const extractedUsername = decodeURIComponent(email.split("@")[0]);
                     setUsername(extractedUsername);
-                } catch (e) {
+                } catch {
                     // Fallback if decoding fails
                     setUsername(email.split("@")[0]);
                 }
@@ -63,8 +64,8 @@ export default function ProfilePage() {
             setMessage({ text: "Profile updated successfully!", type: "success" });
             setNewPassword(""); // Clear password field for security
 
-        } catch (err: any) {
-            setMessage({ text: err.message, type: "error" });
+        } catch (err: unknown) {
+            setMessage({ text: err instanceof Error ? err.message : "Something went wrong", type: "error" });
         }
     };
 
@@ -74,8 +75,8 @@ export default function ProfilePage() {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-screen">
-                Loading...
+            <div className="flex min-h-screen items-center justify-center">
+                <LoadingScreen label="Loading" />
             </div>
         );
     }
