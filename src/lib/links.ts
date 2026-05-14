@@ -85,6 +85,21 @@ export const categoryLinks: Record<string, CategoryData> = {
         ],
     },
 
+    "asian-drama": {
+        title: "Asian Drama",
+        icon: "https://i.pinimg.com/736x/0a/ae/e2/0aaee2de2c5271ae2b333f6adb5f7571.jpg",
+        links: [
+            { name: "asiaflix.net", url: "https://asiaflix.net/home", icon: bulletIcon },
+            { name: "kisskh.id", url: "https://kisskh.id/", icon: bulletIcon },
+            { name: "goplay.su", url: "https://goplay.su/", icon: bulletIcon },
+            { name: "kissasian.com.lv", url: "https://ww14.kissasian.com.lv/", icon: bulletIcon },
+            { name: "dramacool.com.tr", url: "https://dramacool.com.tr/", icon: bulletIcon },
+            { name: "asianctv.cc", url: "https://asianctv.cc/", icon: bulletIcon },
+            { name: "myasiantv.com.bz", url: "https://myasiantv.com.bz/", icon: bulletIcon },
+            { name: "kisskh.club", url: "https://kisskh.club/", icon: bulletIcon },
+        ],
+    },
+
     manga: {
         title: "Manga",
         icon: "https://i.pinimg.com/736x/12/ba/b9/12bab9c3a66daea030108a07251100a2.jpg", // keep category icon normal
