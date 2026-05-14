@@ -62,7 +62,7 @@ export default function Navbar() {
                 </header>
 
                 {/* Navigation Bar */}
-                <nav className="relative flex flex-wrap justify-center gap-4 pb-4 text-sm font-bold uppercase tracking-widest md:gap-12 md:text-[1.2rem]">
+                <nav className="flex flex-wrap justify-center gap-4 pb-4 text-sm font-bold uppercase tracking-widest md:gap-12 md:text-[1.2rem]">
                     <Link
                         href="/"
                         className={`transition-all duration-300 cursor-pointer ${isActive('/') ? "text-[var(--accent-pink)] text-shadow-pink" : "text-[var(--text-main)] hover:text-[var(--accent-pink)] hover:text-shadow-pink"}`}
@@ -83,12 +83,13 @@ export default function Navbar() {
                     >
                         About Me
                     </Link>
-                    <div
-                        className="absolute bottom-0 left-0 h-px w-full animate-[nav-line-glow_4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-[var(--accent-pink)] to-transparent opacity-60"
-                        aria-hidden
-                    />
                 </nav>
             </div>
+            {/* Glowing pink separator — sits flush at the very bottom of the sticky bar */}
+            <div
+                aria-hidden
+                className="nav-glow-line h-px w-full bg-gradient-to-r from-transparent via-[var(--accent-pink)] to-transparent"
+            />
         </div>
     );
 }

@@ -260,13 +260,18 @@
     }
   }
 
+  .nav-glow-line {
+    animation: nav-line-glow 4s ease-in-out infinite;
+    box-shadow: 0 0 10px 1px var(--accent-pink), 0 0 24px 2px rgba(255, 182, 193, 0.35);
+  }
+
   @keyframes nav-line-glow {
     0%,
     100% {
-      opacity: 0.5;
+      opacity: 0.65;
     }
     50% {
-      opacity: 0.9;
+      opacity: 1;
     }
   }
 
