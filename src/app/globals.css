@@ -260,6 +260,16 @@
     }
   }
 
+  @keyframes nav-line-glow {
+    0%,
+    100% {
+      opacity: 0.5;
+    }
+    50% {
+      opacity: 0.9;
+    }
+  }
+
   @keyframes bubble-idle {
     0%,
     100% {

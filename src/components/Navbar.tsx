@@ -36,7 +36,7 @@ export default function Navbar() {
 
     return (
         <div
-            className={`sticky top-0 z-50 w-full border-b border-[var(--wired-grid)] transition-[background,backdrop-filter] duration-500 ${isScrolled ? "bg-[var(--background)]/85 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md" : "bg-transparent"}`}
+            className={`sticky top-0 z-50 w-full border-b border-transparent transition-[background,backdrop-filter] duration-500 ${isScrolled ? "bg-[var(--background)]/85 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md" : "bg-transparent"}`}
         >
             <div className="p-4 md:p-8 pb-0">
                 <header className="flex flex-col md:flex-row justify-between items-center mb-4 md:mb-6 max-w-[1400px] mx-auto w-full gap-4 md:gap-0">
@@ -62,7 +62,7 @@ export default function Navbar() {
                 </header>
 
                 {/* Navigation Bar */}
-                <nav className="flex justify-center gap-4 md:gap-12 pb-4 text-sm font-bold uppercase tracking-widest md:text-[1.2rem] flex-wrap">
+                <nav className="relative flex flex-wrap justify-center gap-4 pb-4 text-sm font-bold uppercase tracking-widest md:gap-12 md:text-[1.2rem]">
                     <Link
                         href="/"
                         className={`transition-all duration-300 cursor-pointer ${isActive('/') ? "text-[var(--accent-pink)] text-shadow-pink" : "text-[var(--text-main)] hover:text-[var(--accent-pink)] hover:text-shadow-pink"}`}
@@ -83,6 +83,10 @@ export default function Navbar() {
                     >
                         About Me
                     </Link>
+                    <div
+                        className="absolute bottom-0 left-0 h-px w-full animate-[nav-line-glow_4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-[var(--accent-pink)] to-transparent opacity-60"
+                        aria-hidden
+                    />
                 </nav>
             </div>
         </div>
