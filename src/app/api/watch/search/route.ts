@@ -54,6 +54,7 @@ export async function GET(req: Request) {
         rating: data.vote_average ? data.vote_average.toFixed(1) : "N/A",
         year: (data.release_date || data.first_air_date || "").substring(0, 4),
         genres: (data.genres || []).map((g: any) => g.name),
+        imdbId: data.imdb_id || null,
         totalSeasons: data.number_of_seasons || 1,
         totalEpisodes: data.number_of_episodes || 1,
         seasons: (data.seasons || [])
