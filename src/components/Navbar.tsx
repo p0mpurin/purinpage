@@ -145,6 +145,20 @@ export default function Navbar() {
               </Link>
 
               <Link
+                href="/watch"
+                className={`relative rounded-xl px-4 py-1.5 font-mono text-xs font-bold uppercase tracking-wider transition-all duration-300 no-underline sm:text-sm ${
+                  isActive("/watch")
+                    ? "bg-[var(--accent-pink)]/20 text-[var(--accent-pink)] shadow-[0_0_16px_var(--bubble-glow-subtle)] border border-[var(--border)]"
+                    : "text-[var(--text-main)] hover:text-white hover:bg-white/[0.06]"
+                }`}
+              >
+                <span>Watch</span>
+                {isActive("/watch") && (
+                  <span className="absolute bottom-0.5 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-[var(--accent-pink)] shadow-[0_0_8px_var(--accent-pink)]" />
+                )}
+              </Link>
+
+              <Link
                 href="/tools"
                 className={`relative rounded-xl px-4 py-1.5 font-mono text-xs font-bold uppercase tracking-wider transition-all duration-300 no-underline sm:text-sm ${
                   isActive("/tools")

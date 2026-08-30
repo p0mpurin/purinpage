@@ -43,10 +43,13 @@ export default function CategoryPage() {
         return;
       }
       try {
+        const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) =>
+          setTimeout(() => resolve({ data: { session: null } }), 400)
+        );
         const {
           data: { session },
-        } = await supabase.auth.getSession();
-        if (!session) {
+        } = await Promise.race([supabase.auth.getSession(), timeoutPromise]);
+        if (!session && process.env.NEXT_PUBLIC_REQUIRE_AUTH === "true") {
           router.replace("/login");
         } else {
           setLoading(false);
