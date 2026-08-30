@@ -330,7 +330,7 @@ export default function WatchPage() {
     }, 100);
   };
 
-  const handleToggleWatchlist = (e: React.MouseEvent, item: MediaItem) => {
+  const handleToggleWatchlist = (e: React.MouseEvent, item: MediaItem | CinemaHistoryItem) => {
     e.stopPropagation();
     toggleCinemaWatchlist({
       id: item.id,
@@ -339,7 +339,8 @@ export default function WatchPage() {
       posterPath: item.posterPath,
       backdropPath: item.backdropPath,
       year: item.year,
-      rating: item.rating,
+      rating: item.rating || "N/A",
+      overview: item.overview || "",
     });
     refreshStorage();
   };
