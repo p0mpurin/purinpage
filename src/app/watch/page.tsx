@@ -70,7 +70,7 @@ export default function WatchPage() {
   const [checkingServers, setCheckingServers] = useState(false);
   const [activeServer, setActiveServer] = useState("vidlink");
   const [theaterMode, setTheaterMode] = useState(false);
-  const [isAdBlockShieldActive, setIsAdBlockShieldActive] = useState(true);
+  const [isAdBlockShieldActive, setIsAdBlockShieldActive] = useState(false);
 
   const playerRef = useRef<HTMLDivElement>(null);
   const catalogGridRef = useRef<HTMLDivElement>(null);
@@ -469,15 +469,16 @@ export default function WatchPage() {
               </div>
             </div>
 
-            {/* Sandboxed Video Embed Container */}
+            {/* Video Embed Container */}
             <div className="relative w-full overflow-hidden rounded-2xl bg-black shadow-2xl border border-[var(--wired-grid)] aspect-video">
               <iframe
                 src={streamUrl}
                 title={selectedMedia.title}
                 allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 sandbox={
                   isAdBlockShieldActive
-                    ? "allow-scripts allow-same-origin allow-forms allow-presentation allow-encrypted-media"
+                    ? "allow-scripts allow-same-origin allow-forms allow-presentation allow-top-navigation-by-user-activation"
                     : undefined
                 }
                 className="h-full w-full border-0"
