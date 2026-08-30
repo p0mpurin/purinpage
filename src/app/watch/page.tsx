@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef, useMemo } from "react";
-import LoadingScreen from "@/components/LoadingScreen";
 import Link from "next/link";
 
 interface MediaItem {
@@ -35,12 +34,18 @@ interface MediaDetails extends MediaItem {
   seasons: SeasonItem[];
 }
 
-const SERVERS = [
-  { id: "vidlink", name: "Server 1 (VidLink HD)", badge: "Fast" },
-  { id: "autoembed", name: "Server 2 (AutoEmbed)", badge: "Multi" },
-  { id: "superembed", name: "Server 3 (SuperEmbed)", badge: "4K" },
-  { id: "vidsrc", name: "Server 4 (VidSrc)", badge: "Mirror" },
-  { id: "twoembed", name: "Server 5 (2Embed)", badge: "Global" },
+interface ServerOption {
+  id: string;
+  name: string;
+  badge: string;
+  latency?: number;
+}
+
+const DEFAULT_VERIFIED_SERVERS: ServerOption[] = [
+  { id: "vidlink", name: "Server 1 (VidLink HD)", badge: "Fast 1080p" },
+  { id: "superembed", name: "Server 2 (SuperEmbed)", badge: "4K / Multi" },
+  { id: "smashystream", name: "Server 3 (SmashyStream)", badge: "Clean Stream" },
+  { id: "vidsrc_to", name: "Server 4 (VidSrc TO)", badge: "Mirror" },
 ];
 
 export default function WatchPage() {
@@ -56,8 +61,11 @@ export default function WatchPage() {
   const [selectedEpisode, setSelectedEpisode] = useState(1);
   const [episodesList, setEpisodesList] = useState<EpisodeItem[]>([]);
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
+  const [availableServers, setAvailableServers] = useState<ServerOption[]>(DEFAULT_VERIFIED_SERVERS);
+  const [checkingServers, setCheckingServers] = useState(false);
   const [activeServer, setActiveServer] = useState("vidlink");
   const [theaterMode, setTheaterMode] = useState(false);
+  const [isAdBlockShieldActive, setIsAdBlockShieldActive] = useState(true);
 
   const playerRef = useRef<HTMLDivElement>(null);
 
@@ -115,6 +123,36 @@ export default function WatchPage() {
     fetchDetails();
   }, [selectedMedia]);
 
+  // Live Server Health Check & Filter
+  useEffect(() => {
+    if (!selectedMedia) return;
+
+    const checkServerHealth = async () => {
+      setCheckingServers(true);
+      try {
+        const res = await fetch(
+          `/api/watch/servers?id=${selectedMedia.id}&type=${selectedMedia.type}&season=${selectedSeason}&episode=${selectedEpisode}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data.servers && data.servers.length > 0) {
+            setAvailableServers(data.servers);
+            // If active server is no longer in online list, switch to the fastest online server
+            if (!data.servers.some((s: ServerOption) => s.id === activeServer)) {
+              setActiveServer(data.servers[0].id);
+            }
+          }
+        }
+      } catch {
+        // keep defaults
+      } finally {
+        setCheckingServers(false);
+      }
+    };
+
+    checkServerHealth();
+  }, [selectedMedia, selectedSeason, selectedEpisode]);
+
   // Fetch episode list when season changes on a TV show
   useEffect(() => {
     if (!selectedMedia || selectedMedia.type !== "tv") return;
@@ -147,7 +185,7 @@ export default function WatchPage() {
     }, 100);
   };
 
-  // Generate Stream URL based on Server and Media
+  // Generate Stream URL based on Verified Server and Media
   const streamUrl = useMemo(() => {
     if (!selectedMedia) return "";
     const id = selectedMedia.id;
@@ -158,22 +196,18 @@ export default function WatchPage() {
         return isTv
           ? `https://vidlink.pro/tv/${id}/${selectedSeason}/${selectedEpisode}?primaryColor=ffb6c1`
           : `https://vidlink.pro/movie/${id}?primaryColor=ffb6c1`;
-      case "autoembed":
-        return isTv
-          ? `https://player.autoembed.cc/embed/tv/${id}/${selectedSeason}/${selectedEpisode}`
-          : `https://player.autoembed.cc/embed/movie/${id}`;
       case "superembed":
         return isTv
           ? `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${selectedSeason}&e=${selectedEpisode}`
           : `https://multiembed.mov/?video_id=${id}&tmdb=1`;
-      case "vidsrc":
+      case "smashystream":
         return isTv
-          ? `https://vidsrc.cc/v2/embed/tv/${id}/${selectedSeason}/${selectedEpisode}`
-          : `https://vidsrc.cc/v2/embed/movie/${id}`;
-      case "twoembed":
+          ? `https://embed.smashystream.com/playere.php?tmdb=${id}&season=${selectedSeason}&episode=${selectedEpisode}`
+          : `https://embed.smashystream.com/playere.php?tmdb=${id}`;
+      case "vidsrc_to":
         return isTv
-          ? `https://www.2embed.cc/embedtv/${id}&s=${selectedSeason}&e=${selectedEpisode}`
-          : `https://www.2embed.cc/embed/${id}`;
+          ? `https://vidsrc.to/embed/tv/${id}/${selectedSeason}/${selectedEpisode}`
+          : `https://vidsrc.to/embed/movie/${id}`;
       default:
         return `https://vidlink.pro/${isTv ? "tv" : "movie"}/${id}`;
     }
@@ -195,7 +229,7 @@ export default function WatchPage() {
             <div className="flex items-center gap-2 mb-1">
               <span className="h-2 w-2 rounded-full bg-[var(--accent-pink)] shadow-[0_0_8px_var(--accent-pink)] animate-pulse" />
               <span className="font-mono text-[0.65rem] font-bold uppercase tracking-[0.25em] text-[var(--accent-pink)]">
-                [WIRED.CINEMA // AD-SHIELDED ENGINE]
+                [WIRED.CINEMA // POPUP-PROOF PLAYER]
               </span>
             </div>
             <h1 className="text-2xl font-black uppercase tracking-wider text-white text-shadow-pink sm:text-3xl">
@@ -263,6 +297,11 @@ export default function WatchPage() {
                   {selectedMedia.rating && (
                     <span className="font-mono text-xs text-amber-300">★ {selectedMedia.rating}</span>
                   )}
+                  {checkingServers && (
+                    <span className="font-mono text-[0.62rem] text-[var(--accent-pink)] animate-pulse">
+                      · Testing servers...
+                    </span>
+                  )}
                 </div>
                 <h2 className="mt-1 text-lg sm:text-xl font-bold uppercase text-white tracking-wide">
                   {selectedMedia.title}
@@ -274,10 +313,10 @@ export default function WatchPage() {
                 </h2>
               </div>
 
-              {/* Server Switcher */}
+              {/* Verified Online Servers Switcher */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
                 <span className="font-mono text-[0.65rem] text-white/40 uppercase shrink-0">Server:</span>
-                {SERVERS.map((srv) => (
+                {availableServers.map((srv) => (
                   <button
                     key={srv.id}
                     type="button"
@@ -289,15 +328,34 @@ export default function WatchPage() {
                     }`}
                   >
                     {srv.name}
+                    {srv.latency && (
+                      <span className="ml-1.5 text-[0.6rem] opacity-70">
+                        {srv.latency}ms
+                      </span>
+                    )}
                   </button>
                 ))}
+
+                {/* Ad-Block Shield Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setIsAdBlockShieldActive(!isAdBlockShieldActive)}
+                  title={isAdBlockShieldActive ? "Ad-Block Shield Active (Popups Blocked)" : "Shield Relaxed"}
+                  className={`rounded-xl px-2.5 py-1.5 font-mono text-xs transition-all cursor-pointer shrink-0 border ${
+                    isAdBlockShieldActive
+                      ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
+                      : "border-amber-500/50 bg-amber-500/10 text-amber-300"
+                  }`}
+                >
+                  🛡️ {isAdBlockShieldActive ? "Shield ON" : "Shield OFF"}
+                </button>
                 
                 {/* Theater Mode Toggle */}
                 <button
                   type="button"
                   onClick={() => setTheaterMode(!theaterMode)}
                   title={theaterMode ? "Normal View" : "Theater View"}
-                  className="rounded-xl border border-[var(--wired-grid)] bg-black/60 p-2 text-white/70 hover:text-white transition-colors cursor-pointer shrink-0 ml-1"
+                  className="rounded-xl border border-[var(--wired-grid)] bg-black/60 p-2 text-white/70 hover:text-white transition-colors cursor-pointer shrink-0"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="2" y="4" width="20" height="16" rx="2"/>
@@ -323,8 +381,12 @@ export default function WatchPage() {
                 src={streamUrl}
                 title={selectedMedia.title}
                 allowFullScreen
-                // Strictly omit allow-popups and allow-top-navigation to block all ads on iOS/Safari
-                sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                // Only allow sandbox features when shield is active, omitting popups to keep iOS ad-free
+                sandbox={
+                  isAdBlockShieldActive
+                    ? "allow-scripts allow-same-origin allow-forms allow-presentation allow-encrypted-media"
+                    : undefined
+                }
                 className="h-full w-full border-0"
               />
             </div>
