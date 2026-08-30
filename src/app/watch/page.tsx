@@ -1,6 +1,18 @@
 "use client";
 
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import {
+  getCinemaHistory,
+  saveCinemaHistory,
+  removeCinemaHistoryItem,
+  clearCinemaHistory,
+  getCinemaWatchlist,
+  isCinemaWatchlisted,
+  toggleCinemaWatchlist,
+  getWatchedEpisodes,
+  markEpisodeWatched,
+  type CinemaHistoryItem,
+} from "@/lib/cinema-history";
 
 interface MediaItem {
   id: number;
@@ -51,7 +63,7 @@ const DEFAULT_VERIFIED_SERVERS: ServerOption[] = [
 ];
 
 export default function WatchPage() {
-  const [activeTab, setActiveTab] = useState<"trending" | "anime" | "kdrama">("trending");
+  const [activeTab, setActiveTab] = useState<"trending" | "anime" | "kdrama" | "watchlist" | "history">("trending");
   const [searchQuery, setSearchQuery] = useState("");
   const [catalogItems, setCatalogItems] = useState<MediaItem[]>([]);
   const [page, setPage] = useState(1);
@@ -59,6 +71,11 @@ export default function WatchPage() {
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   
+  // Cinema History & Watchlist State
+  const [historyList, setHistoryList] = useState<CinemaHistoryItem[]>([]);
+  const [watchlist, setWatchlist] = useState<CinemaHistoryItem[]>([]);
+  const [watchedEpisodesMap, setWatchedEpisodesMap] = useState<Record<string, boolean>>({});
+
   // Active Playing State
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const [mediaDetails, setMediaDetails] = useState<MediaDetails | null>(null);
@@ -76,9 +93,36 @@ export default function WatchPage() {
   const catalogGridRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  // Sync History & Watchlist
+  const refreshStorage = useCallback(() => {
+    setHistoryList(getCinemaHistory());
+    setWatchlist(getCinemaWatchlist());
+  }, []);
+
+  useEffect(() => {
+    refreshStorage();
+    const handleStorageChange = () => refreshStorage();
+    window.addEventListener("wired_cinema_change", handleStorageChange);
+    return () => window.removeEventListener("wired_cinema_change", handleStorageChange);
+  }, [refreshStorage]);
+
+  // Load Watched Episodes for selected media
+  useEffect(() => {
+    if (!selectedMedia) return;
+    setWatchedEpisodesMap(getWatchedEpisodes(selectedMedia.id));
+  }, [selectedMedia]);
+
   // Fetch initial catalog on tab switch or search
   useEffect(() => {
     let isCancelled = false;
+
+    // If viewing Watchlist or History tabs, load directly from storage
+    if (activeTab === "watchlist" || activeTab === "history") {
+      setLoadingInitial(false);
+      setHasMore(false);
+      return;
+    }
+
     setCatalogItems([]);
     setPage(1);
     setHasMore(true);
@@ -114,7 +158,7 @@ export default function WatchPage() {
 
   // Load next page function
   const loadNextPage = useCallback(async () => {
-    if (loadingMore || !hasMore || loadingInitial) return;
+    if (loadingMore || !hasMore || loadingInitial || activeTab === "watchlist" || activeTab === "history") return;
 
     setLoadingMore(true);
     const nextPage = page + 1;
@@ -177,8 +221,7 @@ export default function WatchPage() {
           setMediaDetails(details);
           if (details.type === "tv") {
             const firstSeason = details.seasons?.[0]?.seasonNumber || 1;
-            setSelectedSeason(firstSeason);
-            setSelectedEpisode(1);
+            setSelectedSeason((prev) => (prev > 0 ? prev : firstSeason));
           }
         }
       } catch {
@@ -187,6 +230,27 @@ export default function WatchPage() {
     };
     fetchDetails();
   }, [selectedMedia]);
+
+  // Record playback to History
+  useEffect(() => {
+    if (!selectedMedia) return;
+    saveCinemaHistory({
+      id: selectedMedia.id,
+      title: selectedMedia.title,
+      type: selectedMedia.type,
+      posterPath: selectedMedia.posterPath,
+      backdropPath: selectedMedia.backdropPath,
+      year: selectedMedia.year,
+      rating: selectedMedia.rating,
+      season: selectedMedia.type === "tv" ? selectedSeason : undefined,
+      episode: selectedMedia.type === "tv" ? selectedEpisode : undefined,
+    });
+    if (selectedMedia.type === "tv") {
+      markEpisodeWatched(selectedMedia.id, selectedSeason, selectedEpisode, true);
+      setWatchedEpisodesMap(getWatchedEpisodes(selectedMedia.id));
+    }
+    refreshStorage();
+  }, [selectedMedia, selectedSeason, selectedEpisode, refreshStorage]);
 
   // Live Server Health Check & Filter
   useEffect(() => {
@@ -239,11 +303,21 @@ export default function WatchPage() {
     fetchEpisodes();
   }, [selectedMedia, selectedSeason]);
 
-  const handleSelectMedia = (item: MediaItem) => {
-    setSelectedMedia(item);
+  const handleSelectMedia = (item: MediaItem | CinemaHistoryItem, resumeSeason?: number, resumeEpisode?: number) => {
+    const fullItem: MediaItem = {
+      id: item.id,
+      title: item.title,
+      type: item.type,
+      posterPath: item.posterPath,
+      backdropPath: item.backdropPath,
+      year: item.year,
+      rating: item.rating || "N/A",
+      overview: item.overview || "",
+    };
+    setSelectedMedia(fullItem);
     setMediaDetails(null);
-    setSelectedSeason(1);
-    setSelectedEpisode(1);
+    setSelectedSeason(resumeSeason || 1);
+    setSelectedEpisode(resumeEpisode || 1);
     setTimeout(() => {
       playerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
@@ -254,6 +328,29 @@ export default function WatchPage() {
     setTimeout(() => {
       catalogGridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
+  };
+
+  const handleToggleWatchlist = (e: React.MouseEvent, item: MediaItem) => {
+    e.stopPropagation();
+    toggleCinemaWatchlist({
+      id: item.id,
+      title: item.title,
+      type: item.type,
+      posterPath: item.posterPath,
+      backdropPath: item.backdropPath,
+      year: item.year,
+      rating: item.rating,
+    });
+    refreshStorage();
+  };
+
+  const handleToggleWatchedEp = (e: React.MouseEvent, season: number, epNum: number) => {
+    e.stopPropagation();
+    if (!selectedMedia) return;
+    const key = `S${season}E${epNum}`;
+    const current = !!watchedEpisodesMap[key];
+    markEpisodeWatched(selectedMedia.id, season, epNum, !current);
+    setWatchedEpisodesMap(getWatchedEpisodes(selectedMedia.id));
   };
 
   // Generate Stream URL based on Verified Server and Media
@@ -293,6 +390,23 @@ export default function WatchPage() {
     }
   }, [selectedMedia, activeServer, selectedSeason, selectedEpisode, mediaDetails]);
 
+  // Current display items based on activeTab
+  const displayedItems = useMemo(() => {
+    if (activeTab === "watchlist") {
+      if (searchQuery.trim()) {
+        return watchlist.filter((w) => w.title.toLowerCase().includes(searchQuery.toLowerCase()));
+      }
+      return watchlist;
+    }
+    if (activeTab === "history") {
+      if (searchQuery.trim()) {
+        return historyList.filter((h) => h.title.toLowerCase().includes(searchQuery.toLowerCase()));
+      }
+      return historyList;
+    }
+    return catalogItems;
+  }, [activeTab, watchlist, historyList, catalogItems, searchQuery]);
+
   return (
     <div className="relative min-h-[100dvh] w-full px-4 pb-28 pt-4 sm:px-8 md:px-12 md:pt-6">
       {/* Background Soft Glow */}
@@ -309,14 +423,14 @@ export default function WatchPage() {
             <div className="flex items-center gap-2 mb-1">
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-pink)] shadow-[0_0_8px_var(--accent-pink)]" />
               <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.25em] text-[var(--accent-pink)]">
-                [WIRED.CINEMA // STREAM STUDIO]
+                [WIRED.CINEMA // MEDIA & TRACKER STUDIO]
               </span>
             </div>
             <h1 className="text-2xl font-black uppercase tracking-wider text-white text-shadow-pink sm:text-3xl">
               Cinema
             </h1>
             <p className="text-xs text-[var(--text-main)] opacity-70">
-              High-definition direct streaming for Movies, Series, Anime, and Asian Cinema.
+              High-definition direct streams with automated episode tracking and watchlist sync.
             </p>
           </div>
 
@@ -358,6 +472,82 @@ export default function WatchPage() {
           </div>
         </header>
 
+        {/* CONTINUE WATCHING SHELF (Only if history exists and player is closed) */}
+        {!selectedMedia && !searchQuery && historyList.length > 0 && activeTab !== "history" && (
+          <section className="mb-8 text-left">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-[var(--accent-pink)] animate-pulse" />
+                <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-white">
+                  Continue Watching
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab("history")}
+                className="font-mono text-[0.68rem] text-[var(--accent-pink)] hover:underline cursor-pointer"
+              >
+                View All History ({historyList.length}) →
+              </button>
+            </div>
+
+            <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-none">
+              {historyList.slice(0, 8).map((item) => (
+                <div
+                  key={`continue-${item.type}-${item.id}`}
+                  onClick={() => handleSelectMedia(item, item.season, item.episode)}
+                  className="group relative flex w-52 shrink-0 flex-col overflow-hidden rounded-2xl border border-[var(--wired-grid)] bg-black/50 transition-all duration-300 hover:scale-[1.02] hover:border-[var(--accent-pink)] hover:shadow-[0_0_16px_var(--bubble-glow-subtle)] cursor-pointer"
+                >
+                  <div className="relative aspect-video w-full overflow-hidden bg-black">
+                    {item.backdropPath || item.posterPath ? (
+                      <img
+                        src={item.backdropPath || item.posterPath!}
+                        alt={item.title}
+                        className="h-full w-full object-cover opacity-85 transition-transform duration-500 group-hover:scale-105 group-hover:opacity-100"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center font-mono text-xs text-white/40">
+                        {item.title}
+                      </div>
+                    )}
+                    
+                    {/* Resume Badge */}
+                    <div className="absolute bottom-2 left-2 rounded-md bg-[var(--accent-pink)]/90 px-1.5 py-0.5 font-mono text-[0.62rem] font-black uppercase text-black">
+                      {item.type === "tv" && item.season && item.episode
+                        ? `S${item.season} E${item.episode}`
+                        : "Resume"}
+                    </div>
+
+                    {/* Quick Remove from History */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeCinemaHistoryItem(item.id, item.type);
+                        refreshStorage();
+                      }}
+                      title="Remove from history"
+                      className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-md bg-black/70 font-mono text-[0.65rem] text-white/70 hover:bg-red-500 hover:text-white transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="p-2.5">
+                    <h3 className="truncate font-mono text-xs font-bold text-white group-hover:text-[var(--accent-pink)] transition-colors">
+                      {item.title}
+                    </h3>
+                    <p className="mt-0.5 font-mono text-[0.65rem] text-white/50">
+                      {item.year || "Unknown Year"}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* ACTIVE STREAM PLAYER SECTION */}
         {selectedMedia && (
           <section
@@ -378,6 +568,19 @@ export default function WatchPage() {
               </button>
 
               <div className="flex items-center gap-2">
+                {/* Watchlist Toggle */}
+                <button
+                  type="button"
+                  onClick={(e) => handleToggleWatchlist(e, selectedMedia)}
+                  className={`rounded-xl px-3 py-1 font-mono text-xs font-bold transition-all cursor-pointer border ${
+                    isCinemaWatchlisted(selectedMedia.id, selectedMedia.type)
+                      ? "border-[var(--accent-pink)] bg-[var(--accent-pink)]/20 text-[var(--accent-pink)]"
+                      : "border-[var(--wired-grid)] bg-black/60 text-white/80 hover:text-white"
+                  }`}
+                >
+                  {isCinemaWatchlisted(selectedMedia.id, selectedMedia.type) ? "✓ In Watchlist" : "+ Add to Watchlist"}
+                </button>
+
                 {/* Ad-Block Shield Toggle */}
                 <button
                   type="button"
@@ -488,7 +691,7 @@ export default function WatchPage() {
             {/* Quick Server Switcher Helper / Fallback Bar */}
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--wired-grid)] bg-black/40 px-3.5 py-2 text-left">
               <div className="flex items-center gap-2 font-mono text-[0.68rem] text-white/60">
-                <span className="text-[var(--accent-pink)]">⚡ Stream Tip:</span>
+                <span className="text-[var(--accent-pink)]">Stream Tip:</span>
                 <span>If a video is buffering or unavailable, try switching to another server above.</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -509,7 +712,7 @@ export default function WatchPage() {
               </div>
             </div>
 
-            {/* TV Show / K-Drama Season & Episode Grid Picker */}
+            {/* TV Show / K-Drama Season & Episode Grid Picker with Progress */}
             {selectedMedia.type === "tv" && mediaDetails && (
               <div className="mt-6 border-t border-[var(--wired-grid)] pt-4 text-left">
                 <div className="flex items-center justify-between mb-3">
@@ -551,7 +754,7 @@ export default function WatchPage() {
                   </div>
                 </div>
 
-                {/* Episodes Grid */}
+                {/* Episodes Grid with Seen Checkmarks */}
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-6 max-h-56 overflow-y-auto pr-1 scrollbar-none">
                   {loadingEpisodes ? (
                     <div className="col-span-full py-6 text-center font-mono text-xs text-white/50">
@@ -560,21 +763,33 @@ export default function WatchPage() {
                   ) : episodesList.length > 0 ? (
                     episodesList.map((ep) => {
                       const isCurrent = selectedEpisode === ep.episodeNumber;
+                      const isSeen = !!watchedEpisodesMap[`S${selectedSeason}E${ep.episodeNumber}`];
                       return (
                         <button
                           key={ep.episodeNumber}
                           type="button"
                           onClick={() => setSelectedEpisode(ep.episodeNumber)}
-                          className={`flex flex-col p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                          className={`group relative flex flex-col p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                             isCurrent
                               ? "border-[var(--accent-pink)] bg-[var(--accent-pink)]/20 shadow-[0_0_12px_var(--bubble-glow-subtle)]"
                               : "border-[var(--wired-grid)] bg-black/40 hover:border-white/30"
                           }`}
                         >
-                          <span className="font-mono text-[0.68rem] font-bold text-[var(--accent-pink)]">
-                            EP {ep.episodeNumber}
-                          </span>
-                          <span className="truncate text-xs font-semibold text-white/90">
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono text-[0.68rem] font-bold text-[var(--accent-pink)]">
+                              EP {ep.episodeNumber}
+                            </span>
+                            <span
+                              onClick={(e) => handleToggleWatchedEp(e, selectedSeason, ep.episodeNumber)}
+                              title={isSeen ? "Mark Unwatched" : "Mark Watched"}
+                              className={`text-[0.62rem] font-mono px-1 rounded transition-colors ${
+                                isSeen ? "text-emerald-400 bg-emerald-500/10" : "text-white/30 group-hover:text-white/60"
+                              }`}
+                            >
+                              {isSeen ? "✓ Seen" : "○"}
+                            </span>
+                          </div>
+                          <span className="truncate text-xs font-semibold text-white/90 mt-1">
                             {ep.name}
                           </span>
                         </button>
@@ -584,6 +799,7 @@ export default function WatchPage() {
                     Array.from({ length: 12 }).map((_, idx) => {
                       const epNum = idx + 1;
                       const isCurrent = selectedEpisode === epNum;
+                      const isSeen = !!watchedEpisodesMap[`S${selectedSeason}E${epNum}`];
                       return (
                         <button
                           key={epNum}
@@ -595,7 +811,7 @@ export default function WatchPage() {
                               : "border-[var(--wired-grid)] bg-black/40 text-white/70 hover:text-white"
                           }`}
                         >
-                          Episode {epNum}
+                          Episode {epNum} {isSeen ? "✓" : ""}
                         </button>
                       );
                     })
@@ -620,40 +836,80 @@ export default function WatchPage() {
 
         {/* Category Mode Selector Tabs */}
         {!searchQuery && (
-          <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none text-left">
-            <button
-              type="button"
-              onClick={() => setActiveTab("trending")}
-              className={`rounded-2xl px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                activeTab === "trending"
-                  ? "bg-[var(--accent-pink)] text-black shadow-[0_0_16px_var(--bubble-glow-subtle)]"
-                  : "bg-black/50 text-white/70 hover:text-white border border-[var(--wired-grid)]"
-              }`}
-            >
-              Trending Movies & Shows
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("anime")}
-              className={`rounded-2xl px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                activeTab === "anime"
-                  ? "bg-[var(--accent-pink)] text-black shadow-[0_0_16px_var(--bubble-glow-subtle)]"
-                  : "bg-black/50 text-white/70 hover:text-white border border-[var(--wired-grid)]"
-              }`}
-            >
-              Anime Series
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("kdrama")}
-              className={`rounded-2xl px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                activeTab === "kdrama"
-                  ? "bg-[var(--accent-pink)] text-black shadow-[0_0_16px_var(--bubble-glow-subtle)]"
-                  : "bg-black/50 text-white/70 hover:text-white border border-[var(--wired-grid)]"
-              }`}
-            >
-              Asian Cinema & Drama
-            </button>
+          <div className="mb-6 flex items-center justify-between gap-2 overflow-x-auto pb-2 scrollbar-none text-left">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab("trending")}
+                className={`rounded-2xl px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 ${
+                  activeTab === "trending"
+                    ? "bg-[var(--accent-pink)] text-black shadow-[0_0_16px_var(--bubble-glow-subtle)]"
+                    : "bg-black/50 text-white/70 hover:text-white border border-[var(--wired-grid)]"
+                }`}
+              >
+                Trending
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("anime")}
+                className={`rounded-2xl px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 ${
+                  activeTab === "anime"
+                    ? "bg-[var(--accent-pink)] text-black shadow-[0_0_16px_var(--bubble-glow-subtle)]"
+                    : "bg-black/50 text-white/70 hover:text-white border border-[var(--wired-grid)]"
+                }`}
+              >
+                Anime Series
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("kdrama")}
+                className={`rounded-2xl px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 ${
+                  activeTab === "kdrama"
+                    ? "bg-[var(--accent-pink)] text-black shadow-[0_0_16px_var(--bubble-glow-subtle)]"
+                    : "bg-black/50 text-white/70 hover:text-white border border-[var(--wired-grid)]"
+                }`}
+              >
+                Asian Cinema
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("watchlist")}
+                className={`rounded-2xl px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 ${
+                  activeTab === "watchlist"
+                    ? "bg-[var(--accent-pink)] text-black shadow-[0_0_16px_var(--bubble-glow-subtle)]"
+                    : "bg-black/50 text-white/70 hover:text-white border border-[var(--wired-grid)]"
+                }`}
+              >
+                Watchlist ({watchlist.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("history")}
+                className={`rounded-2xl px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 ${
+                  activeTab === "history"
+                    ? "bg-[var(--accent-pink)] text-black shadow-[0_0_16px_var(--bubble-glow-subtle)]"
+                    : "bg-black/50 text-white/70 hover:text-white border border-[var(--wired-grid)]"
+                }`}
+              >
+                History ({historyList.length})
+              </button>
+            </div>
+
+            {/* Clear History Button if on history tab */}
+            {activeTab === "history" && historyList.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm("Clear all watch history?")) {
+                    clearCinemaHistory();
+                    refreshStorage();
+                  }
+                }}
+                className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 font-mono text-xs text-red-300 hover:bg-red-500 hover:text-white transition-colors cursor-pointer shrink-0"
+              >
+                Clear History
+              </button>
+            )}
           </div>
         )}
 
@@ -664,81 +920,118 @@ export default function WatchPage() {
               <div key={i} className="aspect-[2/3] rounded-2xl bg-black/40 border border-white/5 animate-pulse" />
             ))}
           </div>
-        ) : catalogItems.length > 0 ? (
+        ) : displayedItems.length > 0 ? (
           <>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 text-left">
-              {catalogItems.map((item) => (
-                <div
-                  key={`${item.type}-${item.id}`}
-                  onClick={() => handleSelectMedia(item)}
-                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-[var(--wired-grid)] bg-black/40 transition-all duration-300 hover:scale-[1.02] hover:border-[var(--accent-pink)] hover:shadow-[0_0_20px_var(--bubble-glow-subtle)] cursor-pointer"
-                >
-                  {/* Poster Image */}
-                  <div className="relative aspect-[2/3] w-full overflow-hidden bg-black/80">
-                    {item.posterPath ? (
-                      <img
-                        src={item.posterPath}
-                        alt={item.title}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-black/90 p-3 text-center font-mono text-xs text-white/40">
-                        {item.title}
-                      </div>
-                    )}
+              {displayedItems.map((item) => {
+                const inWatchlist = isCinemaWatchlisted(item.id, item.type);
+                return (
+                  <div
+                    key={`${item.type}-${item.id}`}
+                    onClick={() => handleSelectMedia(item, (item as CinemaHistoryItem).season, (item as CinemaHistoryItem).episode)}
+                    className="group relative flex flex-col overflow-hidden rounded-2xl border border-[var(--wired-grid)] bg-black/40 transition-all duration-300 hover:scale-[1.02] hover:border-[var(--accent-pink)] hover:shadow-[0_0_20px_var(--bubble-glow-subtle)] cursor-pointer"
+                  >
+                    {/* Poster Image */}
+                    <div className="relative aspect-[2/3] w-full overflow-hidden bg-black/80">
+                      {item.posterPath ? (
+                        <img
+                          src={item.posterPath}
+                          alt={item.title}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-black/90 p-3 text-center font-mono text-xs text-white/40">
+                          {item.title}
+                        </div>
+                      )}
 
-                    {/* Rating Pill */}
-                    {item.rating && item.rating !== "N/A" && (
-                      <div className="absolute top-2 right-2 flex items-center gap-1 rounded-md bg-black/80 px-1.5 py-0.5 font-mono text-[0.62rem] font-bold text-white backdrop-blur-md border border-white/10">
-                        <span>{item.rating}</span>
-                      </div>
-                    )}
+                      {/* Watchlist Bookmark Icon Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleToggleWatchlist(e, item)}
+                        title={inWatchlist ? "Remove from Watchlist" : "Add to Watchlist"}
+                        className={`absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-lg backdrop-blur-md transition-all cursor-pointer ${
+                          inWatchlist
+                            ? "bg-[var(--accent-pink)] text-black"
+                            : "bg-black/70 text-white/70 hover:bg-black hover:text-white"
+                        }`}
+                      >
+                        {inWatchlist ? "✓" : "+"}
+                      </button>
 
-                    <span className="absolute bottom-2 left-2 rounded-md bg-[var(--accent-pink)]/90 px-1.5 py-0.5 font-mono text-[0.6rem] font-black uppercase text-black">
-                      {item.type === "movie" ? "Movie" : "Series"}
-                    </span>
-                  </div>
+                      {/* Rating Pill */}
+                      {item.rating && item.rating !== "N/A" && (
+                        <div className="absolute top-2 right-2 flex items-center gap-1 rounded-md bg-black/80 px-1.5 py-0.5 font-mono text-[0.62rem] font-bold text-white backdrop-blur-md border border-white/10">
+                          <span>{item.rating}</span>
+                        </div>
+                      )}
 
-                  {/* Info Card */}
-                  <div className="p-3 bg-black/60">
-                    <h3 className="truncate font-mono text-xs font-bold text-white group-hover:text-[var(--accent-pink)] transition-colors">
-                      {item.title}
-                    </h3>
-                    <div className="mt-1 flex items-center justify-between text-[0.68rem] text-white/50 font-mono">
-                      <span>{item.year || "N/A"}</span>
-                      <span className="text-[var(--accent-pink)] font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                        PLAY
+                      <span className="absolute bottom-2 left-2 rounded-md bg-[var(--accent-pink)]/90 px-1.5 py-0.5 font-mono text-[0.6rem] font-black uppercase text-black">
+                        {(item as CinemaHistoryItem).season && (item as CinemaHistoryItem).episode
+                          ? `S${(item as CinemaHistoryItem).season} E${(item as CinemaHistoryItem).episode}`
+                          : item.type === "movie"
+                          ? "Movie"
+                          : "Series"}
                       </span>
                     </div>
+
+                    {/* Info Card */}
+                    <div className="p-3 bg-black/60">
+                      <h3 className="truncate font-mono text-xs font-bold text-white group-hover:text-[var(--accent-pink)] transition-colors">
+                        {item.title}
+                      </h3>
+                      <div className="mt-1 flex items-center justify-between text-[0.68rem] text-white/50 font-mono">
+                        <span>{item.year || "N/A"}</span>
+                        <span className="text-[var(--accent-pink)] font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                          PLAY
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            {/* Bottom Sentinel for Infinite Scroll */}
-            <div ref={sentinelRef} className="py-8 flex items-center justify-center">
-              {loadingMore && (
-                <div className="flex items-center gap-2 font-mono text-xs text-[var(--accent-pink)]">
-                  <div className="h-4 w-4 rounded-full border-2 border-[var(--accent-pink)] border-t-transparent animate-spin" />
-                  <span>Loading more titles...</span>
-                </div>
-              )}
-            </div>
+            {/* Bottom Sentinel for Infinite Scroll (only for server-paginated tabs) */}
+            {activeTab !== "watchlist" && activeTab !== "history" && (
+              <div ref={sentinelRef} className="py-8 flex items-center justify-center">
+                {loadingMore && (
+                  <div className="flex items-center gap-2 font-mono text-xs text-[var(--accent-pink)]">
+                    <div className="h-4 w-4 rounded-full border-2 border-[var(--accent-pink)] border-t-transparent animate-spin" />
+                    <span>Loading more titles...</span>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         ) : (
           <div className="my-16 flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-[var(--wired-grid)] bg-black/20 p-12 text-center">
             <span className="font-serif text-4xl text-[var(--accent-pink)]">線</span>
             <p className="font-mono text-xs uppercase tracking-widest text-[var(--accent-pink)]">
-              No results found for &quot;{searchQuery}&quot;
+              {activeTab === "watchlist"
+                ? "Your watchlist is currently empty"
+                : activeTab === "history"
+                ? "No watch history recorded yet"
+                : `No results found for "${searchQuery}"`}
             </p>
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="mt-2 rounded-xl border border-[var(--accent-pink)]/40 bg-[var(--accent-pink)]/10 px-4 py-1.5 font-mono text-xs uppercase text-[var(--accent-pink)] hover:bg-[var(--accent-pink)]/20 cursor-pointer"
-            >
-              Clear Search
-            </button>
+            {activeTab === "watchlist" || activeTab === "history" ? (
+              <button
+                type="button"
+                onClick={() => setActiveTab("trending")}
+                className="mt-2 rounded-xl border border-[var(--accent-pink)]/40 bg-[var(--accent-pink)]/10 px-4 py-1.5 font-mono text-xs uppercase text-[var(--accent-pink)] hover:bg-[var(--accent-pink)]/20 cursor-pointer"
+              >
+                Browse Trending Titles
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="mt-2 rounded-xl border border-[var(--accent-pink)]/40 bg-[var(--accent-pink)]/10 px-4 py-1.5 font-mono text-xs uppercase text-[var(--accent-pink)] hover:bg-[var(--accent-pink)]/20 cursor-pointer"
+              >
+                Clear Search
+              </button>
+            )}
           </div>
         )}
       </div>
