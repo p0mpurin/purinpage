@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   const season = searchParams.get("season") || "1";
   const episode = searchParams.get("episode") || "1";
 
-  const serversToTest = [
+  const allServers = [
     {
       id: "vidlink",
       name: "Server 1 (VidLink HD)",
@@ -59,49 +59,8 @@ export async function GET(req: Request) {
     },
   ];
 
-  const results = await Promise.all(
-    serversToTest.map(async (server) => {
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 3500);
-        const startTime = Date.now();
-
-        const res = await fetch(server.url, {
-          method: "GET",
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-          },
-          signal: controller.signal,
-        });
-
-        clearTimeout(timer);
-        const latency = Date.now() - startTime;
-
-        if (!res.ok) {
-          return { ...server, isOnline: false, latency, reason: `HTTP ${res.status}` };
-        }
-
-        const text = await res.text();
-        const isBlocked =
-          text.includes("Please Disable Sandbox") ||
-          text.includes("Disable Sandbox") ||
-          text.includes("sandbox detected") ||
-          (text.includes("Cloudflare Ray ID") && text.includes("Access denied"));
-
-        if (isBlocked) {
-          return { ...server, isOnline: false, latency, reason: "Sandbox Blocked" };
-        }
-
-        return { ...server, isOnline: true, latency };
-      } catch (err: any) {
-        return { ...server, isOnline: false, latency: 999, reason: err.name || "Timeout" };
-      }
-    })
-  );
-
-  const activeServers = results.filter((s) => s.isOnline);
+  // Always return the complete reliable server list to ensure parity across all devices
   return NextResponse.json({
-    servers: activeServers.length > 0 ? activeServers : results.slice(0, 3),
+    servers: allServers,
   });
 }

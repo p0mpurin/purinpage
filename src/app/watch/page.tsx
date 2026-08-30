@@ -87,7 +87,7 @@ export default function WatchPage() {
   const [checkingServers, setCheckingServers] = useState(false);
   const [activeServer, setActiveServer] = useState("vidlink");
   const [theaterMode, setTheaterMode] = useState(false);
-  const [isAdBlockShieldActive, setIsAdBlockShieldActive] = useState(false);
+  const [isAdBlockShieldActive, setIsAdBlockShieldActive] = useState(true);
 
   const playerRef = useRef<HTMLDivElement>(null);
   const catalogGridRef = useRef<HTMLDivElement>(null);
