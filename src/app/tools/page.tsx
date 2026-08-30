@@ -809,7 +809,7 @@ export default function ToolsPage() {
                       onClick={handleCopyHash}
                       className="shrink-0 rounded-lg border border-[var(--border)] bg-black/60 px-3 py-1.5 font-mono text-xs text-white hover:border-[var(--accent-pink)] hover:text-[var(--accent-pink)] transition-colors cursor-pointer"
                     >
-                      {copiedMagnet ? "Copied Hash" : `Hash: ${parsedMagnetInfo.hash.slice(0, 10)}...`}
+                      {copiedMagnet ? "Copied Hash" : parsedMagnetInfo.hash ? `Hash: ${parsedMagnetInfo.hash.slice(0, 10)}...` : "Copy Hash"}
                     </button>
                   </div>
 
