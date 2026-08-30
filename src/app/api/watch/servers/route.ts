@@ -10,36 +10,20 @@ export async function GET(req: Request) {
 
   const allServers = [
     {
-      id: "smashystream",
-      name: "Server 1 (SmashyStream)",
-      badge: "Clean 1080p",
-      url: type === "tv"
-        ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${season}&episode=${episode}`
-        : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`,
-    },
-    {
       id: "superembed",
-      name: "Server 2 (SuperEmbed)",
-      badge: "Multi-Source 4K",
+      name: "Server 1 (SuperEmbed Multi-Source)",
+      badge: "4K / Multi-Server",
       url: type === "tv"
         ? `https://multiembed.mov/?video_id=${imdbId || tmdbId}&tmdb=1&s=${season}&e=${episode}`
         : `https://multiembed.mov/?video_id=${imdbId || tmdbId}${imdbId ? "" : "&tmdb=1"}`,
     },
     {
-      id: "rivestream",
-      name: "Server 3 (RiveStream)",
-      badge: "High Speed HD",
+      id: "autoembed",
+      name: "Server 2 (AutoEmbed Pro)",
+      badge: "Fast Mirror",
       url: type === "tv"
-        ? `https://rivestream.live/embed?type=tv&id=${tmdbId}&season=${season}&episode=${episode}`
-        : `https://rivestream.live/embed?type=movie&id=${tmdbId}`,
-    },
-    {
-      id: "twoembed",
-      name: "Server 4 (2Embed)",
-      badge: "Global Mirror",
-      url: type === "tv"
-        ? `https://www.2embed.cc/embedtv/${tmdbId}&s=${season}&e=${episode}`
-        : `https://www.2embed.cc/embed/${tmdbId}`,
+        ? `https://autoembed.co/tv/tmdb/${tmdbId}/${season}/${episode}`
+        : `https://autoembed.co/movie/tmdb/${tmdbId}`,
     },
   ];
 

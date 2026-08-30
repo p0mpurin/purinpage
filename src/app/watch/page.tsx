@@ -54,10 +54,8 @@ interface ServerOption {
 }
 
 const DEFAULT_VERIFIED_SERVERS: ServerOption[] = [
-  { id: "smashystream", name: "Server 1 (SmashyStream)", badge: "Clean 1080p" },
-  { id: "superembed", name: "Server 2 (SuperEmbed)", badge: "Multi-Source 4K" },
-  { id: "rivestream", name: "Server 3 (RiveStream)", badge: "High Speed HD" },
-  { id: "twoembed", name: "Server 4 (2Embed)", badge: "Global Mirror" },
+  { id: "superembed", name: "Server 1 (SuperEmbed Multi-Source)", badge: "4K / Multi-Server" },
+  { id: "autoembed", name: "Server 2 (AutoEmbed Pro)", badge: "Fast Mirror" },
 ];
 
 export default function WatchPage() {
@@ -83,7 +81,7 @@ export default function WatchPage() {
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
   const [availableServers, setAvailableServers] = useState<ServerOption[]>(DEFAULT_VERIFIED_SERVERS);
   const [checkingServers, setCheckingServers] = useState(false);
-  const [activeServer, setActiveServer] = useState("smashystream");
+  const [activeServer, setActiveServer] = useState("superembed");
   const [theaterMode, setTheaterMode] = useState(false);
 
   const playerRef = useRef<HTMLDivElement>(null);
@@ -359,24 +357,16 @@ export default function WatchPage() {
     const isTv = selectedMedia.type === "tv";
 
     switch (activeServer) {
-      case "smashystream":
-        return isTv
-          ? `https://embed.smashystream.com/playere.php?tmdb=${id}&season=${selectedSeason}&episode=${selectedEpisode}`
-          : `https://embed.smashystream.com/playere.php?tmdb=${id}`;
       case "superembed":
         return isTv
           ? `https://multiembed.mov/?video_id=${imdb || id}&tmdb=1&s=${selectedSeason}&e=${selectedEpisode}`
           : `https://multiembed.mov/?video_id=${imdb || id}${imdb ? "" : "&tmdb=1"}`;
-      case "rivestream":
+      case "autoembed":
         return isTv
-          ? `https://rivestream.live/embed?type=tv&id=${id}&season=${selectedSeason}&episode=${selectedEpisode}`
-          : `https://rivestream.live/embed?type=movie&id=${id}`;
-      case "twoembed":
-        return isTv
-          ? `https://www.2embed.cc/embedtv/${id}&s=${selectedSeason}&e=${selectedEpisode}`
-          : `https://www.2embed.cc/embed/${id}`;
+          ? `https://autoembed.co/tv/tmdb/${id}/${selectedSeason}/${selectedEpisode}`
+          : `https://autoembed.co/movie/tmdb/${id}`;
       default:
-        return `https://embed.smashystream.com/playere.php?tmdb=${id}`;
+        return `https://multiembed.mov/?video_id=${imdb || id}&tmdb=1`;
     }
   }, [selectedMedia, activeServer, selectedSeason, selectedEpisode, mediaDetails]);
 
@@ -655,7 +645,6 @@ export default function WatchPage() {
                 title={selectedMedia.title}
                 allowFullScreen
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-encrypted-media"
                 className="h-full w-full border-0"
               />
             </div>
