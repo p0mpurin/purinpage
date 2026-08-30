@@ -20,11 +20,11 @@ export interface PremadeTheme {
 }
 
 export const DEFAULT_THEME: CustomTheme = {
-  wallpaperUrl: "",
-  wallpaperDim: 0.65,
-  wallpaperBlur: 4,
-  accentColor: "#ffb6c1",
-  presetName: "Default Accent",
+  wallpaperUrl: "https://w.wallhaven.cc/full/k8/wallhaven-k8d276.png",
+  wallpaperDim: 0.46,
+  wallpaperBlur: 3,
+  accentColor: "#999999",
+  presetName: "main",
 };
 
 // Built-in presets list
@@ -474,7 +474,9 @@ export function loadSavedTheme(): CustomTheme {
   try {
     const saved = localStorage.getItem("wired_sys_theme");
     if (saved) {
-      return { ...DEFAULT_THEME, ...JSON.parse(saved) };
+      const parsed = JSON.parse(saved);
+      if (!parsed || typeof parsed !== "object") return DEFAULT_THEME;
+      return { ...DEFAULT_THEME, ...parsed };
     }
   } catch {
     // ignore
