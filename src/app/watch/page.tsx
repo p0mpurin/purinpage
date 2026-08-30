@@ -54,8 +54,11 @@ interface ServerOption {
 }
 
 const DEFAULT_VERIFIED_SERVERS: ServerOption[] = [
-  { id: "superembed", name: "Server 1 (SuperEmbed Multi-Source)", badge: "4K / Multi-Server" },
-  { id: "autoembed", name: "Server 2 (AutoEmbed Pro)", badge: "Fast Mirror" },
+  { id: "vidlink", name: "Server 1 (VidLink HD)", badge: "Clean 1080p" },
+  { id: "autoembed", name: "Server 2 (AutoEmbed Pro)", badge: "Fast Stream" },
+  { id: "vidfast", name: "Server 3 (VidFast HD)", badge: "Zero-Ad HD" },
+  { id: "movies111", name: "Server 4 (111Movies)", badge: "Direct Mirror" },
+  { id: "superembed", name: "Server 5 (SuperEmbed Multi)", badge: "Multi-Source 4K" },
 ];
 
 export default function WatchPage() {
@@ -81,7 +84,7 @@ export default function WatchPage() {
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
   const [availableServers, setAvailableServers] = useState<ServerOption[]>(DEFAULT_VERIFIED_SERVERS);
   const [checkingServers, setCheckingServers] = useState(false);
-  const [activeServer, setActiveServer] = useState("superembed");
+  const [activeServer, setActiveServer] = useState("vidlink");
   const [theaterMode, setTheaterMode] = useState(false);
 
   const playerRef = useRef<HTMLDivElement>(null);
@@ -357,16 +360,28 @@ export default function WatchPage() {
     const isTv = selectedMedia.type === "tv";
 
     switch (activeServer) {
-      case "superembed":
+      case "vidlink":
         return isTv
-          ? `https://multiembed.mov/?video_id=${imdb || id}&tmdb=1&s=${selectedSeason}&e=${selectedEpisode}`
-          : `https://multiembed.mov/?video_id=${imdb || id}${imdb ? "" : "&tmdb=1"}`;
+          ? `https://vidlink.pro/tv/${id}/${selectedSeason}/${selectedEpisode}?primaryColor=ffb6c1`
+          : `https://vidlink.pro/movie/${id}?primaryColor=ffb6c1`;
       case "autoembed":
         return isTv
           ? `https://autoembed.co/tv/tmdb/${id}/${selectedSeason}/${selectedEpisode}`
           : `https://autoembed.co/movie/tmdb/${id}`;
+      case "vidfast":
+        return isTv
+          ? `https://vidfast.pro/tv/${id}/${selectedSeason}/${selectedEpisode}`
+          : `https://vidfast.pro/movie/${id}`;
+      case "movies111":
+        return isTv
+          ? `https://111movies.com/tv/${id}/${selectedSeason}/${selectedEpisode}`
+          : `https://111movies.com/movie/${id}`;
+      case "superembed":
+        return isTv
+          ? `https://multiembed.mov/?video_id=${imdb || id}&tmdb=1&s=${selectedSeason}&e=${selectedEpisode}`
+          : `https://multiembed.mov/?video_id=${imdb || id}${imdb ? "" : "&tmdb=1"}`;
       default:
-        return `https://multiembed.mov/?video_id=${imdb || id}&tmdb=1`;
+        return `https://vidlink.pro/${isTv ? "tv" : "movie"}/${id}?primaryColor=ffb6c1`;
     }
   }, [selectedMedia, activeServer, selectedSeason, selectedEpisode, mediaDetails]);
 
