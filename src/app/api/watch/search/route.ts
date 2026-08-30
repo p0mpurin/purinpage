@@ -10,6 +10,7 @@ export async function GET(req: Request) {
   const id = searchParams.get("id");
   const mediaType = searchParams.get("type") || "movie"; // "movie" | "tv"
   const seasonNum = searchParams.get("season") || "1";
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
 
   try {
     // 1. Fetch TV / Drama Episode Details
@@ -65,16 +66,15 @@ export async function GET(req: Request) {
       });
     }
 
-    // 3. Search Mode
+    // 3. Search Mode (with pagination)
     if (query) {
       const res = await fetch(
-        `${TMDB_BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=false`,
+        `${TMDB_BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&page=${page}&include_adult=false`,
         { next: { revalidate: 600 } }
       );
       const data = await res.json();
       const results = (data.results || [])
         .filter((item: any) => item.media_type === "movie" || item.media_type === "tv")
-        .slice(0, 24)
         .map((item: any) => ({
           id: item.id,
           title: item.title || item.name,
@@ -86,17 +86,21 @@ export async function GET(req: Request) {
           overview: item.overview,
         }));
 
-      return NextResponse.json({ results });
+      return NextResponse.json({
+        results,
+        page: data.page || page,
+        totalPages: data.total_pages || 1,
+      });
     }
 
-    // 4. Anime Discovery
+    // 4. Anime Discovery (with pagination)
     if (mode === "anime") {
       const res = await fetch(
-        `${TMDB_BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&with_keywords=210024|287501|334|10349&with_original_language=ja&sort_by=popularity.desc`,
+        `${TMDB_BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&with_keywords=210024|287501|334|10349&with_original_language=ja&sort_by=popularity.desc&page=${page}`,
         { next: { revalidate: 3600 } }
       );
       const data = await res.json();
-      const results = (data.results || []).slice(0, 20).map((item: any) => ({
+      const results = (data.results || []).map((item: any) => ({
         id: item.id,
         title: item.name,
         type: "tv",
@@ -106,17 +110,21 @@ export async function GET(req: Request) {
         rating: item.vote_average ? item.vote_average.toFixed(1) : "N/A",
         overview: item.overview,
       }));
-      return NextResponse.json({ results });
+      return NextResponse.json({
+        results,
+        page: data.page || page,
+        totalPages: data.total_pages || 1,
+      });
     }
 
-    // 5. K-Drama Discovery
+    // 5. K-Drama Discovery (with pagination)
     if (mode === "kdrama") {
       const res = await fetch(
-        `${TMDB_BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&with_original_language=ko&sort_by=popularity.desc`,
+        `${TMDB_BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&with_original_language=ko&sort_by=popularity.desc&page=${page}`,
         { next: { revalidate: 3600 } }
       );
       const data = await res.json();
-      const results = (data.results || []).slice(0, 20).map((item: any) => ({
+      const results = (data.results || []).map((item: any) => ({
         id: item.id,
         title: item.name,
         type: "tv",
@@ -126,18 +134,21 @@ export async function GET(req: Request) {
         rating: item.vote_average ? item.vote_average.toFixed(1) : "N/A",
         overview: item.overview,
       }));
-      return NextResponse.json({ results });
+      return NextResponse.json({
+        results,
+        page: data.page || page,
+        totalPages: data.total_pages || 1,
+      });
     }
 
-    // 6. Default: Trending All
+    // 6. Default: Trending (with pagination)
     const res = await fetch(
-      `${TMDB_BASE_URL}/trending/all/day?api_key=${TMDB_API_KEY}`,
+      `${TMDB_BASE_URL}/trending/all/day?api_key=${TMDB_API_KEY}&page=${page}`,
       { next: { revalidate: 3600 } }
     );
     const data = await res.json();
     const results = (data.results || [])
       .filter((item: any) => item.media_type === "movie" || item.media_type === "tv")
-      .slice(0, 24)
       .map((item: any) => ({
         id: item.id,
         title: item.title || item.name,
@@ -149,7 +160,11 @@ export async function GET(req: Request) {
         overview: item.overview,
       }));
 
-    return NextResponse.json({ results });
+    return NextResponse.json({
+      results,
+      page: data.page || page,
+      totalPages: data.total_pages || 1,
+    });
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Failed to query watch database" },

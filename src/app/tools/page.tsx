@@ -928,7 +928,7 @@ export default function ToolsPage() {
 
                 {dohResults.isDomainActive && (
                   <div className="rounded-xl border border-[var(--border)] bg-[var(--accent-pink)]/10 p-3.5 text-xs text-[var(--foreground)]">
-                    <p className="font-bold text-[var(--accent-pink)] mb-1">💡 ISP Bypass Tip:</p>
+                    <p className="font-bold text-[var(--accent-pink)] mb-1">[DNS Bypass Tip]:</p>
                     If this site does not open on your device but shows <span className="text-green-300 font-mono">Resolved</span> above, your ISP is censoring it. Set your router/device DNS to <span className="font-mono text-white">1.1.1.1</span> (Cloudflare) or enable <span className="font-mono text-white">Secure DNS (DoH)</span> in your browser settings to bypass the block instantly.
                   </div>
                 )}
