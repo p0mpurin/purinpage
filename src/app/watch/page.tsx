@@ -233,7 +233,7 @@ export default function WatchPage() {
               </span>
             </div>
             <h1 className="text-2xl font-black uppercase tracking-wider text-white text-shadow-pink sm:text-3xl">
-              Cyber Cinema & Streams
+              Cinema
             </h1>
             <p className="text-xs text-[var(--text-main)] opacity-70">
               Clean, popup-free streaming sandbox for Movies, TV Shows, Anime & K-Drama.
