@@ -54,12 +54,10 @@ interface ServerOption {
 }
 
 const DEFAULT_VERIFIED_SERVERS: ServerOption[] = [
-  { id: "vidlink", name: "Server 1 (VidLink HD)", badge: "Fast 1080p" },
-  { id: "vidsrc_su", name: "Server 2 (VidSrc SU)", badge: "New Releases" },
-  { id: "superembed", name: "Server 3 (SuperEmbed)", badge: "Multi-Source" },
-  { id: "smashystream", name: "Server 4 (SmashyStream)", badge: "Clean Stream" },
-  { id: "rivestream", name: "Server 5 (RiveStream)", badge: "4K / Sub" },
-  { id: "vidsrc_to", name: "Server 6 (VidSrc TO)", badge: "Backup Mirror" },
+  { id: "smashystream", name: "Server 1 (SmashyStream)", badge: "Clean 1080p" },
+  { id: "superembed", name: "Server 2 (SuperEmbed)", badge: "Multi-Source 4K" },
+  { id: "rivestream", name: "Server 3 (RiveStream)", badge: "High Speed HD" },
+  { id: "twoembed", name: "Server 4 (2Embed)", badge: "Global Mirror" },
 ];
 
 export default function WatchPage() {
@@ -85,9 +83,8 @@ export default function WatchPage() {
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
   const [availableServers, setAvailableServers] = useState<ServerOption[]>(DEFAULT_VERIFIED_SERVERS);
   const [checkingServers, setCheckingServers] = useState(false);
-  const [activeServer, setActiveServer] = useState("vidlink");
+  const [activeServer, setActiveServer] = useState("smashystream");
   const [theaterMode, setTheaterMode] = useState(false);
-  const [isAdBlockShieldActive, setIsAdBlockShieldActive] = useState(true);
 
   const playerRef = useRef<HTMLDivElement>(null);
   const catalogGridRef = useRef<HTMLDivElement>(null);
@@ -362,32 +359,24 @@ export default function WatchPage() {
     const isTv = selectedMedia.type === "tv";
 
     switch (activeServer) {
-      case "vidlink":
-        return isTv
-          ? `https://vidlink.pro/tv/${id}/${selectedSeason}/${selectedEpisode}?primaryColor=ffb6c1`
-          : `https://vidlink.pro/movie/${id}?primaryColor=ffb6c1`;
-      case "vidsrc_su":
-        return isTv
-          ? `https://vidsrc.su/embed/tv/${id}/${selectedSeason}/${selectedEpisode}`
-          : `https://vidsrc.su/embed/movie/${id}`;
-      case "superembed":
-        return isTv
-          ? `https://multiembed.mov/?video_id=${imdb || id}&tmdb=1&s=${selectedSeason}&e=${selectedEpisode}`
-          : `https://multiembed.mov/?video_id=${imdb || id}${imdb ? "" : "&tmdb=1"}`;
       case "smashystream":
         return isTv
           ? `https://embed.smashystream.com/playere.php?tmdb=${id}&season=${selectedSeason}&episode=${selectedEpisode}`
           : `https://embed.smashystream.com/playere.php?tmdb=${id}`;
+      case "superembed":
+        return isTv
+          ? `https://multiembed.mov/?video_id=${imdb || id}&tmdb=1&s=${selectedSeason}&e=${selectedEpisode}`
+          : `https://multiembed.mov/?video_id=${imdb || id}${imdb ? "" : "&tmdb=1"}`;
       case "rivestream":
         return isTv
           ? `https://rivestream.live/embed?type=tv&id=${id}&season=${selectedSeason}&episode=${selectedEpisode}`
           : `https://rivestream.live/embed?type=movie&id=${id}`;
-      case "vidsrc_to":
+      case "twoembed":
         return isTv
-          ? `https://vidsrc.to/embed/tv/${id}/${selectedSeason}/${selectedEpisode}`
-          : `https://vidsrc.to/embed/movie/${id}`;
+          ? `https://www.2embed.cc/embedtv/${id}&s=${selectedSeason}&e=${selectedEpisode}`
+          : `https://www.2embed.cc/embed/${id}`;
       default:
-        return `https://vidlink.pro/${isTv ? "tv" : "movie"}/${id}`;
+        return `https://embed.smashystream.com/playere.php?tmdb=${id}`;
     }
   }, [selectedMedia, activeServer, selectedSeason, selectedEpisode, mediaDetails]);
 
@@ -582,20 +571,6 @@ export default function WatchPage() {
                   {isCinemaWatchlisted(selectedMedia.id, selectedMedia.type) ? "✓ In Watchlist" : "+ Add to Watchlist"}
                 </button>
 
-                {/* Ad-Block Shield Toggle */}
-                <button
-                  type="button"
-                  onClick={() => setIsAdBlockShieldActive(!isAdBlockShieldActive)}
-                  title={isAdBlockShieldActive ? "Ad-Block Shield Active" : "Shield Relaxed"}
-                  className={`rounded-xl px-2.5 py-1 font-mono text-[0.68rem] font-bold uppercase transition-all cursor-pointer border ${
-                    isAdBlockShieldActive
-                      ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
-                      : "border-amber-500/50 bg-amber-500/10 text-amber-300"
-                  }`}
-                >
-                  {isAdBlockShieldActive ? "Shield [ON]" : "Shield [OFF]"}
-                </button>
-
                 {/* Close Player */}
                 <button
                   type="button"
@@ -680,11 +655,7 @@ export default function WatchPage() {
                 title={selectedMedia.title}
                 allowFullScreen
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                sandbox={
-                  isAdBlockShieldActive
-                    ? "allow-scripts allow-same-origin allow-forms allow-presentation allow-top-navigation-by-user-activation"
-                    : undefined
-                }
+                sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-encrypted-media"
                 className="h-full w-full border-0"
               />
             </div>
