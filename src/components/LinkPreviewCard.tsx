@@ -1,244 +1,187 @@
 "use client";
 
-import { startTransition, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { DEFAULT_PREVIEW_BANNER_URL } from "@/lib/preview-constants";
-import { readClientPreviewCache, writeClientPreviewCache } from "@/lib/preview-cache-client";
-import { runLinkPreviewSlot } from "@/lib/preview-fetch-queue";
-import type { LinkSortBucket } from "@/lib/link-sort";
+import { useEffect, useState } from "react";
+import { isFavorite, toggleFavorite } from "@/lib/favorites";
 
-type Reachable = "idle" | "loading" | "live" | "down";
-
-function bucketForState(
-  url: string,
-  reachable: Reachable,
-  previewImage: string | null
-): LinkSortBucket {
-  if (url === "#" || !url.startsWith("http")) return "down";
-  if (reachable === "idle" || reachable === "loading") return "pending";
-  if (reachable === "down") return "down";
-  if (previewImage) return "preview";
-  return "live-empty";
-}
-
-export default function LinkPreviewCard(props: {
+interface LinkCardProps {
   name: string;
   url: string;
-  sortKey: string;
-  animationDelay: string;
-  onSortUpdate?: (sortKey: string, bucket: LinkSortBucket) => void;
-}) {
-  const { name, url, sortKey, animationDelay, onSortUpdate } = props;
-  const skipFetchRef = useRef(false);
-  const [reachable, setReachable] = useState<Reachable>(() =>
-    url === "#" || !url.startsWith("http") ? "down" : "idle"
-  );
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const rootRef = useRef<HTMLAnchorElement>(null);
+  animationDelay?: string;
+  categoryIcon?: string;
+}
 
-  useLayoutEffect(() => {
-    if (url === "#" || !url.startsWith("http")) return;
-    const hit = readClientPreviewCache(url);
-    if (hit) {
-      skipFetchRef.current = true;
-      startTransition(() => {
-        setPreviewImage(hit.previewImage);
-        setReachable(hit.reachable ? "live" : "down");
-      });
-    }
-  }, [url]);
+export default function LinkPreviewCard({
+  name,
+  url,
+  animationDelay = "0ms",
+  categoryIcon,
+}: LinkCardProps) {
+  const [copied, setCopied] = useState(false);
+  const [starred, setStarred] = useState(false);
 
   useEffect(() => {
-    onSortUpdate?.(sortKey, bucketForState(url, reachable, previewImage));
-  }, [url, reachable, previewImage, sortKey, onSortUpdate]);
+    setStarred(isFavorite(url));
 
-  useEffect(() => {
-    if (url === "#" || !url.startsWith("http")) {
-      return;
-    }
-
-    const el = rootRef.current;
-    if (!el) return;
-
-    let cancelled = false;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries[0]?.isIntersecting) return;
-        observer.disconnect();
-
-        if (skipFetchRef.current) {
-          return;
-        }
-
-        void (async () => {
-          setReachable("loading");
-          try {
-            const trimmed = url.trim();
-            const res = await runLinkPreviewSlot(async () => {
-              const init = {
-                method: "POST" as const,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ url: trimmed }),
-              };
-              let r = await fetch("/api/link-preview", init);
-              if (r.status === 503) {
-                await new Promise((resolve) => setTimeout(resolve, 750));
-                r = await fetch("/api/link-preview", init);
-              }
-              return r;
-            });
-            const data = (await res.json()) as {
-              reachable?: boolean;
-              previewImage?: string | null;
-              error?: string;
-            };
-            if (cancelled) return;
-            if (!res.ok) {
-              setReachable("down");
-              return;
-            }
-            if (typeof data.previewImage === "string" && data.previewImage.length > 0) {
-              setPreviewImage(data.previewImage);
-            }
-            const live = Boolean(data.reachable);
-            setReachable(live ? "live" : "down");
-            writeClientPreviewCache(url, {
-              previewImage:
-                typeof data.previewImage === "string" && data.previewImage.length > 0
-                  ? data.previewImage
-                  : null,
-              reachable: live,
-            });
-          } catch {
-            if (!cancelled) {
-              setReachable("down");
-              writeClientPreviewCache(url, { previewImage: null, reachable: false });
-            }
-          }
-        })();
-      },
-      { rootMargin: "140px 0px", threshold: 0.06 }
-    );
-
-    observer.observe(el);
-    return () => {
-      cancelled = true;
-      observer.disconnect();
+    const handleFavChange = () => {
+      setStarred(isFavorite(url));
     };
+
+    window.addEventListener("wired_favorites_change", handleFavChange);
+    return () => window.removeEventListener("wired_favorites_change", handleFavChange);
   }, [url]);
 
-  function renderBanner() {
-    if (previewImage) {
-      return (
-        <img
-          src={previewImage}
-          alt=""
-          className="mx-auto h-full w-full object-contain object-center transition-transform duration-500 group-hover:scale-[1.02]"
-          loading="lazy"
-        />
-      );
-    }
-
-    if (reachable === "live") {
-      return (
-        <div className="flex h-full min-h-[6rem] w-full items-center justify-center px-5">
-          <div className="relative w-full max-w-[85%] border border-[var(--wired-grid)] bg-black/55 px-5 py-4 text-center backdrop-blur-[1px]">
-            <div
-              className="absolute left-0 top-0 h-px w-full bg-gradient-to-r from-transparent via-[var(--accent-pink)]/35 to-transparent"
-              aria-hidden
-            />
-            <p className="font-mono text-[0.7rem] font-bold uppercase tracking-[0.42em] text-[var(--foreground)] text-shadow-pink">
-              No preview
-            </p>
-            <p className="mt-2 font-mono text-[0.58rem] uppercase tracking-[0.28em] text-[var(--text-main)] opacity-50">
-              Site is up · no share image
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    if (reachable === "down") {
-      return (
-        <img
-          src={DEFAULT_PREVIEW_BANNER_URL}
-          alt=""
-          className="mx-auto h-full w-full object-contain object-center transition-transform duration-500 group-hover:scale-[1.02]"
-          loading="lazy"
-        />
-      );
-    }
-
-    return (
-      <div
-        className="flex h-full min-h-[6rem] w-full items-center justify-center bg-[linear-gradient(180deg,rgba(26,26,26,0.9),rgba(0,0,0,0.95))]"
-        aria-hidden
-      >
-        <span className="text-[0.55rem] uppercase tracking-[0.5em] text-[var(--text-main)] opacity-25">···</span>
-      </div>
-    );
+  let domain = "";
+  try {
+    const parsed = new URL(url);
+    domain = parsed.hostname.replace(/^www\./, "");
+  } catch {
+    domain = url.replace(/^https?:\/\//, "").split("/")[0] || url;
   }
+
+  const faviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`;
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleToggleStar = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const isNowFav = toggleFavorite({ name, url, icon: categoryIcon });
+    setStarred(isNowFav);
+  };
 
   return (
     <a
-      ref={rootRef}
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      title={name}
       style={{ animationDelay }}
-      className="link-preview-card bubble-tile group relative flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--wired-grid)] bg-black/35 tracking-normal no-underline shadow-[0_12px_40px_rgba(0,0,0,0.35)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-[var(--accent-pink)]/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.45)] hover:!tracking-normal focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-pink)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+      className="glass-card-dream group relative flex flex-col justify-between overflow-hidden rounded-2xl p-4 no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-pink)] border border-[var(--wired-grid)] bg-black/40"
     >
-      <div className="relative aspect-[2/1] w-full overflow-hidden bg-black">
-        {renderBanner()}
-
-        {reachable === "loading" && (
-          <div
-            className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
-            aria-hidden
-          >
-            <span className="h-9 w-9 animate-spin rounded-full border-2 border-[var(--accent-dim)] border-t-[var(--accent-pink)]" />
+      {/* Top Bar: Favicon + Domain Pill + Actions */}
+      <div className="relative z-10 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[var(--wired-grid)] bg-black/60 p-1 shadow-sm transition-transform duration-300 group-hover:scale-105">
+            <img
+              src={faviconUrl}
+              alt=""
+              className="h-full w-full object-contain rounded-xs"
+              loading="lazy"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = "none";
+              }}
+            />
           </div>
-        )}
+          <span className="truncate font-mono text-[0.68rem] uppercase tracking-wider text-[var(--text-main)] opacity-75 group-hover:opacity-100 transition-opacity">
+            {domain}
+          </span>
+        </div>
 
-        <div className="absolute right-2 top-2">
-          <StatusChip state={reachable} />
+        {/* Actions: Favorite Star + Copy Link */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Star / Favorite Toggle Button */}
+          <button
+            type="button"
+            onClick={handleToggleStar}
+            aria-label={starred ? "Remove from Favorites" : "Add to Favorites"}
+            title={starred ? "In Favorites (Click to remove)" : "Add to Favorites"}
+            className={`rounded-md border p-1.5 transition-all duration-200 focus:outline-none cursor-pointer ${
+              starred
+                ? "border-[var(--accent-pink)] bg-[var(--accent-pink)]/20 text-[var(--accent-pink)] shadow-[0_0_10px_var(--bubble-glow-subtle)] opacity-100"
+                : "border-[var(--wired-grid)] bg-black/40 text-white/40 hover:border-[var(--accent-pink)]/50 hover:text-white"
+            }`}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill={starred ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          </button>
+
+          {/* Copy Link Button */}
+          <button
+            type="button"
+            onClick={handleCopy}
+            aria-label={copied ? "Copied" : "Copy URL"}
+            title="Copy URL"
+            className="rounded-md border border-[var(--wired-grid)] bg-black/40 p-1.5 text-[var(--text-main)] opacity-60 transition-all duration-200 hover:border-[var(--accent-pink)] hover:text-[var(--accent-pink)] hover:opacity-100 focus:outline-none cursor-pointer"
+          >
+            {copied ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--accent-pink)"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 px-4 py-3">
-        <span className="line-clamp-2 text-balance text-sm font-bold uppercase leading-snug tracking-wide text-[var(--accent-pink)] transition-colors duration-300 group-hover:text-white">
+      {/* Center: Title */}
+      <div className="relative z-10 my-3 text-left">
+        <h3 className="line-clamp-1 text-sm font-bold uppercase tracking-wide text-white transition-colors duration-300 group-hover:text-[var(--accent-pink)] text-glow-pink">
           {name}
+        </h3>
+      </div>
+
+      {/* Bottom Bar: Action link with gentle arrow */}
+      <div className="relative z-10 flex items-center justify-between border-t border-[var(--wired-grid)]/60 pt-2.5">
+        <span className="font-mono text-[0.62rem] uppercase tracking-widest text-[var(--text-main)] opacity-50 group-hover:opacity-80 transition-opacity">
+          Direct Link
         </span>
-        <span className="truncate font-mono text-[0.65rem] uppercase tracking-wider text-[var(--text-main)] opacity-55">
-          {url.replace(/^https?:\/\//, "").split("/")[0]}
+        <span className="flex items-center gap-1 font-mono text-[0.68rem] font-semibold text-[var(--accent-pink)] opacity-80 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
+          <span>VISIT</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M7 17l9.2-9.2M17 17V8H8" />
+          </svg>
         </span>
       </div>
     </a>
-  );
-}
-
-function StatusChip({ state }: { state: Reachable }) {
-  if (state === "idle") return null;
-
-  if (state === "loading") {
-    return (
-      <span className="rounded-full bg-black/70 px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-wider text-[var(--text-main)] backdrop-blur-sm">
-        Checking
-      </span>
-    );
-  }
-
-  if (state === "live") {
-    return (
-      <span className="rounded-full bg-emerald-950/85 px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-wider text-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.35)] backdrop-blur-sm">
-        Online
-      </span>
-    );
-  }
-
-  return (
-    <span className="rounded-full bg-red-950/85 px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-wider text-red-300 shadow-[0_0_12px_rgba(248,113,113,0.25)] backdrop-blur-sm">
-      Unreachable
-    </span>
   );
 }

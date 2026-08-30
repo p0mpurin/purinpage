@@ -1,97 +1,51 @@
 @import 'tailwindcss';
 
-
 @custom-variant dark (&:is(.dark *));
 
-/* Lain-inspired light pink & black theme */
 :root {
-  --background: #000000;
-  --foreground: #e0e0e0;
-  --card: #0a0a0a;
-  --card-foreground: #e0e0e0;
-  --popover: #0a0a0a;
-  --popover-foreground: #e0e0e0;
+  --background: #050508;
+  --foreground: #f1f5f9;
+  --card: #0c0a0e;
+  --card-foreground: #f1f5f9;
+  --popover: #0f0c12;
+  --popover-foreground: #f1f5f9;
   --primary: #ffb6c1;
   --primary-foreground: #000000;
-  --secondary: #1a1a1a;
+  --secondary: #18141c;
   --secondary-foreground: #ffb6c1;
-  --muted: #1a1a1a;
+  --muted: #1e1822;
   --muted-foreground: #ff8fa3;
   --accent: #ffb6c1;
   --accent-foreground: #000000;
   --destructive: #ff4d6d;
   --destructive-foreground: #000000;
-  --border: #ff8fa3;
-  --input: #1a1a1a;
+  --border: rgba(255, 182, 193, 0.35);
+  --input: rgba(255, 182, 193, 0.08);
   --ring: #ffb6c1;
-  --chart-1: #ffb6c1;
-  --chart-2: #ff8fa3;
-  --chart-3: #ff6b8a;
-  --chart-4: #ffc8d4;
-  --chart-5: #ffd9e0;
-  --radius: 0;
-  --sidebar: #0a0a0a;
-  --sidebar-foreground: #e0e0e0;
-  --sidebar-primary: #ffb6c1;
-  --sidebar-primary-foreground: #000000;
-  --sidebar-accent: #1a1a1a;
-  --sidebar-accent-foreground: #ffb6c1;
-  --sidebar-border: #ff8fa3;
-  --sidebar-ring: #ffb6c1;
+  --radius: 0.75rem;
 
-  /* Lain custom vars */
+  /* Dynamic Custom Variables (Controlled by user theme settings) */
   --accent-pink: #ffb6c1;
-  --accent-dim: #4a2030;
-  --wired-grid: rgba(255, 182, 193, 0.12);
-  --glass-shadow: 0 0 15px rgba(255, 182, 193, 0.3);
-  --text-main: #c4c4c4;
-  --bubble-glow: rgba(255, 182, 193, 0.45);
-}
-
-.dark {
-  --background: #000000;
-  --foreground: #e0e0e0;
-  --card: #0a0a0a;
-  --card-foreground: #e0e0e0;
-  --popover: #0a0a0a;
-  --popover-foreground: #e0e0e0;
-  --primary: #ffb6c1;
-  --primary-foreground: #000000;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #ffb6c1;
-  --muted: #1a1a1a;
-  --muted-foreground: #ff8fa3;
-  --accent: #ffb6c1;
-  --accent-foreground: #000000;
-  --destructive: #ff4d6d;
-  --destructive-foreground: #000000;
-  --border: #ff8fa3;
-  --input: #1a1a1a;
-  --ring: #ffb6c1;
-  --chart-1: #ffb6c1;
-  --chart-2: #ff8fa3;
-  --chart-3: #ff6b8a;
-  --chart-4: #ffc8d4;
-  --chart-5: #ffd9e0;
-  --sidebar: #0a0a0a;
-  --sidebar-foreground: #e0e0e0;
-  --sidebar-primary: #ffb6c1;
-  --sidebar-primary-foreground: #000000;
-  --sidebar-accent: #1a1a1a;
-  --sidebar-accent-foreground: #ffb6c1;
-  --sidebar-border: #ff8fa3;
-  --sidebar-ring: #ffb6c1;
+  --accent-dim: #3d1a28;
+  --wired-grid: rgba(255, 182, 193, 0.14);
+  --bubble-glow: rgba(255, 182, 193, 0.55);
+  --bubble-glow-subtle: rgba(255, 182, 193, 0.2);
+  --bubble-sheen: rgba(255, 182, 193, 0.3);
+  --glass-border: rgba(255, 182, 193, 0.18);
+  --glass-border-hover: rgba(255, 182, 193, 0.5);
+  --text-glow: rgba(255, 182, 193, 0.65);
+  --text-main: #cbd5e1;
+  --text-sub: #818cf8;
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+  --font-serif: 'Times New Roman', Times, 'Noto Serif JP', serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -100,280 +54,113 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-    box-sizing: border-box;
-  }
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  letter-spacing: -0.01em;
+  -webkit-tap-highlight-color: transparent;
+}
 
-  body {
-    @apply bg-background text-foreground;
-    font-family: 'Courier New', Courier, monospace;
-    min-height: 100vh;
-  }
+/* Ambient layered background glow using user accent */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 50% 15%, var(--bubble-glow-subtle) 0%, transparent 55%),
+    radial-gradient(circle at 85% 85%, var(--wired-grid) 0%, transparent 50%),
+    radial-gradient(circle at 15% 80%, var(--wired-grid) 0%, transparent 45%);
+  pointer-events: none;
+  z-index: -2;
+}
 
-  /* CRT Scanline Overlay */
-  body::after {
-    content: " ";
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
-      linear-gradient(90deg, rgba(255, 182, 193, 0.04), rgba(0, 255, 0, 0.02), rgba(255, 182, 193, 0.04));
-    z-index: 40;
-    background-size: 100% 2px, 3px 100%;
-    pointer-events: none;
-  }
+/* Subtle scanline effect */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    rgba(18, 16, 22, 0) 50%,
+    rgba(0, 0, 0, 0.25) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.5;
+}
 
-  .primary-btn {
-    @apply border border-[var(--accent-pink)] text-[var(--accent-pink)] hover:bg-[var(--accent-pink)] hover:text-black transition-all duration-300 cursor-pointer bg-transparent;
-  }
-
-  /* Wired Grid Background */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image:
-      linear-gradient(var(--wired-grid) 1px, transparent 1px),
-      linear-gradient(90deg, var(--wired-grid) 1px, transparent 1px);
-    background-size: 40px 40px;
-    z-index: -1;
-    opacity: 0.5;
-  }
-
-  a {
-    color: var(--accent-pink);
-    text-decoration: none;
-    text-shadow: 0 0 5px var(--accent-pink);
-    transition: all 0.2s ease;
-  }
-
-  a:hover {
-    text-shadow: 0 0 10px var(--accent-pink), 0 0 20px var(--accent-pink);
-    letter-spacing: 1px;
-  }
-
-  h1,
-  h2,
-  h3 {
-    text-transform: uppercase;
-    letter-spacing: 4px;
-    text-shadow: 2px 2px 0px var(--accent-dim);
-  }
-
-  .glass-panel {
-    background: rgba(8, 8, 12, 0.72);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid var(--wired-grid);
-    box-shadow:
-      0 0 0 1px rgba(255, 182, 193, 0.06),
-      0 24px 48px rgba(0, 0, 0, 0.45),
-      var(--glass-shadow);
-  }
-
-  .input-field {
-    width: 100%;
-    padding: 0.65rem 0.85rem;
-    background: rgba(26, 26, 26, 0.8);
-    border: 1px solid var(--wired-grid);
-    color: var(--foreground);
-    font-family: inherit;
-    transition:
-      border-color 0.25s ease,
-      box-shadow 0.25s ease;
-  }
-
-  .input-field:focus {
-    outline: none;
-    border-color: var(--accent-pink);
-    box-shadow: 0 0 0 1px var(--accent-pink), 0 0 20px rgba(255, 182, 193, 0.15);
-  }
-
+@layer utilities {
   .text-shadow-pink {
-    text-shadow:
-      0 0 12px var(--accent-pink),
-      0 0 28px var(--accent-dim);
+    text-shadow: 0 0 12px var(--text-glow), 0 0 24px var(--bubble-glow-subtle);
   }
 
-  @keyframes tile-enter {
-    from {
-      opacity: 0;
-      transform: translateY(14px) scale(0.94);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
+  .text-shadow-pink-subtle {
+    text-shadow: 0 0 8px var(--text-glow);
   }
 
-  @keyframes fade-rise {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes header-pop {
-    from {
-      opacity: 0;
-      transform: scale(0.85);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  .nav-glow-line {
-    animation: nav-line-glow 4s ease-in-out infinite;
-    box-shadow: 0 0 10px 1px var(--accent-pink), 0 0 24px 2px rgba(255, 182, 193, 0.35);
-  }
-
-  @keyframes nav-line-glow {
-    0%,
-    100% {
-      opacity: 0.65;
-    }
-    50% {
-      opacity: 1;
-    }
-  }
-
-  @keyframes bubble-idle {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-3px);
-    }
-  }
-
-  .bubble-tile {
-    animation: tile-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  }
-
-  .category-bubble .bubble-ring {
-    animation: bubble-idle 4.5s ease-in-out infinite;
-    animation-delay: calc(var(--stagger, 0ms) + 0ms);
-  }
-
-  .category-bubble:nth-child(odd) .bubble-ring {
-    animation-duration: 5.2s;
-  }
-
-  .bubble-ring > img,
-  .bubble-ring > span {
-    position: relative;
-    z-index: 2;
-  }
-
+  /* Bubble rings fully connected to user accent */
   .bubble-ring {
     position: relative;
     border-radius: 50%;
     overflow: hidden;
     box-shadow:
-      0 0 0 1px rgba(255, 182, 193, 0.25),
-      0 4px 24px rgba(0, 0, 0, 0.55),
-      0 0 32px rgba(255, 182, 193, 0.12);
-    transition:
-      transform 0.4s cubic-bezier(0.34, 1.4, 0.64, 1),
-      box-shadow 0.35s ease;
+      0 0 0 1.5px var(--border),
+      0 6px 24px rgba(0, 0, 0, 0.8),
+      0 0 20px var(--bubble-glow-subtle);
+    transition: all 0.35s cubic-bezier(0.34, 1.4, 0.64, 1);
   }
 
   .bubble-ring::after {
     content: '';
     position: absolute;
-    inset: -40%;
+    inset: -30%;
     border-radius: 50%;
     background: conic-gradient(
-      from 120deg,
+      from 90deg,
       transparent 0deg,
-      rgba(255, 182, 193, 0.12) 90deg,
-      transparent 180deg
+      var(--bubble-sheen) 60deg,
+      transparent 120deg
     );
     opacity: 0;
     transition: opacity 0.35s ease;
     pointer-events: none;
     z-index: 1;
-    animation: bubble-sheen 6s linear infinite;
+    animation: bubble-spin 5s linear infinite;
   }
 
-  @keyframes bubble-sheen {
+  @keyframes bubble-spin {
     to {
       transform: rotate(360deg);
     }
   }
 
-  .group:hover .bubble-ring::after,
-  .group:focus-visible .bubble-ring::after {
+  .bubble-tile:hover .bubble-ring::after {
     opacity: 1;
   }
 
-  .bubble-ring-lg {
-    box-shadow:
-      0 0 0 2px rgba(255, 182, 193, 0.2),
-      0 8px 40px rgba(0, 0, 0, 0.5),
-      0 0 48px rgba(255, 182, 193, 0.14);
-  }
-
-  .bubble-tile:hover .bubble-ring,
-  .bubble-tile:focus-visible .bubble-ring {
-    transform: scale(1.07);
+  .bubble-tile:hover .bubble-ring {
+    transform: scale(1.05) translateY(-2px);
     box-shadow:
       0 0 0 2px var(--accent-pink),
-      0 0 36px var(--bubble-glow),
-      0 12px 40px rgba(0, 0, 0, 0.45);
-  }
-
-  .category-bubble:hover .bubble-ring,
-  .category-bubble:focus-visible .bubble-ring {
-    animation: none;
+      0 0 32px var(--bubble-glow),
+      0 12px 36px rgba(0, 0, 0, 0.7);
   }
 
   .bubble-img {
     border-radius: 50%;
+    position: relative;
+    z-index: 2;
     transition: transform 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
   }
 
-  .bubble-tile:hover .bubble-img,
-  .bubble-tile:focus-visible .bubble-img {
+  .bubble-tile:hover .bubble-img {
     transform: scale(1.06);
   }
 
@@ -381,52 +168,50 @@
     border-radius: 50%;
     overflow: hidden;
     box-shadow:
-      0 0 0 2px rgba(255, 182, 193, 0.3),
-      0 0 40px rgba(255, 182, 193, 0.2);
+      0 0 0 2px var(--border),
+      0 0 32px var(--bubble-glow-subtle);
   }
 
-  @keyframes lain-cursor-blink {
-    0%,
-    49% {
-      opacity: 1;
-    }
-    50%,
-    100% {
-      opacity: 0;
-    }
+  .glass-card-dream {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.02) 0%,
+      rgba(15, 12, 18, 0.65) 100%
+    );
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow:
+      0 8px 30px rgba(0, 0, 0, 0.65),
+      inset 0 1px 0 var(--glass-border);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .login-cursor {
-    animation: lain-cursor-blink 1.12s step-end infinite;
-    line-height: 0.85;
+  .glass-card-dream:hover {
+    transform: translateY(-2px);
+    border-color: var(--glass-border-hover);
+    background: linear-gradient(
+      135deg,
+      var(--glass-border) 0%,
+      rgba(25, 18, 28, 0.8) 100%
+    );
+    box-shadow:
+      0 16px 40px rgba(0, 0, 0, 0.75),
+      0 0 24px var(--bubble-glow-subtle),
+      inset 0 1px 0 var(--glass-border-hover);
   }
 
-  .login-lain {
-    font-family: inherit;
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
-
-  .login-lain input,
-  .login-lain button {
-    font-family: inherit;
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
+}
 
-  @media (prefers-reduced-motion: reduce) {
-    .bubble-tile,
-    .category-bubble .bubble-ring {
-      animation: none !important;
-    }
-
-    .bubble-ring::after {
-      animation: none !important;
-    }
-
-    .login-cursor {
-      animation: none !important;
-      opacity: 1;
-    }
-
-    * {
-      scroll-behavior: auto;
-    }
+@media (hover: none) and (pointer: coarse) {
+  .bubble-tile:active .bubble-ring {
+    transform: scale(0.96);
   }
 }

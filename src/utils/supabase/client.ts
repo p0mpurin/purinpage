@@ -9,9 +9,8 @@ export const createSupabaseClient = () => {
     if (client) return client
 
     if (!supabaseUrl || !supabaseKey) {
-        throw new Error(
-            'Supabase env vars missing. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local (see .env.example)'
-        )
+        client = createClient('https://mock.supabase.co', 'mock_anon_key_for_local_dev')
+        return client
     }
 
     client = createClient(supabaseUrl, supabaseKey)
