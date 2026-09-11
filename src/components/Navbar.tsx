@@ -236,6 +236,20 @@ export default function Navbar() {
         </div>
       </header>
 
+      {/* External-link safety notice */}
+      <aside
+        role="note"
+        aria-label="External links safety notice"
+        className="pointer-events-auto mx-3 mt-1.5 sm:mx-6 md:mx-8"
+      >
+        <p className="mx-auto max-w-[1440px] border-b border-[var(--wired-grid)]/70 px-2 pb-2 text-center font-mono text-[0.6rem] leading-relaxed text-[var(--text-main)] opacity-65 sm:px-5 sm:text-[0.68rem]">
+          <span className="text-[var(--accent-pink)]" aria-hidden>!</span>{" "}
+          <span className="font-semibold text-[var(--accent-pink)]">External links:</span>{" "}
+          use an ad blocker first — Android: AdGuard · iOS: 1Blocker / AdGuard
+          <span className="opacity-60"> · Third-party ads aren’t controlled by WIRED/SYS.</span>
+        </p>
+      </aside>
+
       {/* Theme Settings Modal */}
       <SettingsModal
         isOpen={settingsOpen}
