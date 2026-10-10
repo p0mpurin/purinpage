@@ -20,74 +20,17 @@ const TRACKING_PARAMS = new Set([
   "wprid", "ncid", "guccounter", "share_id", "source", "adgrpid", "campaignid"
 ]);
 
-type ToolTab = "downloader" | "subtitles" | "cleaner" | "torrent" | "doh";
+type ToolTab = "subtitles" | "cleaner" | "torrent" | "doh";
 
-function extractYouTubeId(url: string): string | null {
-  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
-  return match ? match[1] : null;
-}
+const TABS: { id: ToolTab; label: string }[] = [
+  { id: "subtitles", label: "Subtitle Fixer" },
+  { id: "cleaner", label: "Link Cleaner" },
+  { id: "torrent", label: "Magnet Stream" },
+  { id: "doh", label: "DNS Bypass" },
+];
 
 export default function ToolsPage() {
-  const [activeTab, setActiveTab] = useState<ToolTab>("downloader");
-
-  // --- Tool 1: Universal Downloader State ---
-  const [downloadUrl, setDownloadUrl] = useState("");
-  const [quality, setQuality] = useState("1080");
-  const [isAudioOnly, setIsAudioOnly] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-  const [ytVideoId, setYtVideoId] = useState<string | null>(null);
-  const [downloadResult, setDownloadResult] = useState<{
-    url?: string;
-    text?: string;
-    error?: string;
-    title?: string;
-    author?: string;
-    cover?: string;
-  } | null>(null);
-
-  const handleUrlChange = (val: string) => {
-    setDownloadUrl(val);
-    const ytid = extractYouTubeId(val);
-    setYtVideoId(ytid);
-    setDownloadResult(null);
-  };
-
-  const handleDownload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!downloadUrl.trim() || ytVideoId) return;
-
-    setDownloading(true);
-    setDownloadResult(null);
-
-    try {
-      const res = await fetch("/api/tools/download", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: downloadUrl.trim(),
-          vQuality: quality,
-          isAudioOnly,
-        }),
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        setDownloadResult({
-          url: data.url || data.stream,
-          text: data.text,
-          title: data.title,
-          author: data.author,
-          cover: data.cover,
-        });
-      } else {
-        setDownloadResult({ error: data.error || "Could not fetch media. Please check the URL." });
-      }
-    } catch (err: any) {
-      setDownloadResult({ error: err.message || "Failed to process download" });
-    } finally {
-      setDownloading(false);
-    }
-  };
+  const [activeTab, setActiveTab] = useState<ToolTab>("subtitles");
 
   // --- Tool 2: Subtitle Sync & Ad Cleaner State ---
   const [subContent, setSubContent] = useState("");
@@ -305,234 +248,22 @@ export default function ToolsPage() {
 
           {/* Cyber Tab Switcher */}
           <nav className="flex items-center gap-1.5 overflow-x-auto rounded-2xl border border-[var(--border)] bg-[#0c0a14]/80 p-1.5 backdrop-blur-xl shadow-lg scrollbar-none">
-            <button
-              type="button"
-              onClick={() => setActiveTab("downloader")}
-              className={`shrink-0 rounded-xl px-3.5 py-1.5 font-mono text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-                activeTab === "downloader"
-                  ? "bg-[var(--accent-pink)]/20 text-[var(--accent-pink)] shadow-[0_0_15px_var(--bubble-glow-subtle)] border border-[var(--border)]"
-                  : "text-[var(--text-main)] hover:text-white hover:bg-white/[0.05]"
-              }`}
-            >
-              Downloader
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("subtitles")}
-              className={`shrink-0 rounded-xl px-3.5 py-1.5 font-mono text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-                activeTab === "subtitles"
-                  ? "bg-[var(--accent-pink)]/20 text-[var(--accent-pink)] shadow-[0_0_15px_var(--bubble-glow-subtle)] border border-[var(--border)]"
-                  : "text-[var(--text-main)] hover:text-white hover:bg-white/[0.05]"
-              }`}
-            >
-              Subtitle Fixer
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("cleaner")}
-              className={`shrink-0 rounded-xl px-3.5 py-1.5 font-mono text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-                activeTab === "cleaner"
-                  ? "bg-[var(--accent-pink)]/20 text-[var(--accent-pink)] shadow-[0_0_15px_var(--bubble-glow-subtle)] border border-[var(--border)]"
-                  : "text-[var(--text-main)] hover:text-white hover:bg-white/[0.05]"
-              }`}
-            >
-              Link Cleaner
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("torrent")}
-              className={`shrink-0 rounded-xl px-3.5 py-1.5 font-mono text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-                activeTab === "torrent"
-                  ? "bg-[var(--accent-pink)]/20 text-[var(--accent-pink)] shadow-[0_0_15px_var(--bubble-glow-subtle)] border border-[var(--border)]"
-                  : "text-[var(--text-main)] hover:text-white hover:bg-white/[0.05]"
-              }`}
-            >
-              Magnet Stream
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("doh")}
-              className={`shrink-0 rounded-xl px-3.5 py-1.5 font-mono text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-                activeTab === "doh"
-                  ? "bg-[var(--accent-pink)]/20 text-[var(--accent-pink)] shadow-[0_0_15px_var(--bubble-glow-subtle)] border border-[var(--border)]"
-                  : "text-[var(--text-main)] hover:text-white hover:bg-white/[0.05]"
-              }`}
-            >
-              DNS Bypass
-            </button>
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`shrink-0 rounded-xl px-3.5 py-1.5 font-mono text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
+                  activeTab === tab.id
+                    ? "bg-[var(--accent-pink)]/20 text-[var(--accent-pink)] shadow-[0_0_15px_var(--bubble-glow-subtle)] border border-[var(--border)]"
+                    : "text-[var(--text-main)] hover:text-white hover:bg-white/[0.05]"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </nav>
         </header>
-
-        {/* Tab 1: Universal Media Downloader */}
-        {activeTab === "downloader" && (
-          <div className="glass-card-dream flex flex-col gap-6 rounded-3xl border border-[var(--border)] bg-[#09070e]/90 p-6 sm:p-8 shadow-2xl">
-            <div className="space-y-1 text-left">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[0.62rem] font-bold uppercase text-[var(--accent-pink)]">
-                  [ENGINE // TIKWM + COBALT]
-                </span>
-              </div>
-              <h2 className="text-lg font-bold text-white">
-                Universal Media Downloader
-              </h2>
-              <p className="text-xs text-[var(--text-main)] opacity-75">
-                Download high-speed video & audio from TikTok (No Watermark), Twitter/X, Instagram, YouTube, Reddit, and SoundCloud.
-              </p>
-            </div>
-
-            <form onSubmit={handleDownload} className="flex flex-col gap-4">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <input
-                  type="text"
-                  placeholder="Paste media URL (TikTok, YouTube, Twitter/X, Instagram, Reddit, etc.)..."
-                  value={downloadUrl}
-                  onChange={(e) => handleUrlChange(e.target.value)}
-                  className="w-full rounded-xl border border-[var(--border)] bg-black/60 px-4 py-3 font-mono text-xs text-white placeholder:text-white/30 focus:border-[var(--accent-pink)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-pink)]"
-                />
-                {!ytVideoId && (
-                  <button
-                    type="submit"
-                    disabled={downloading || !downloadUrl.trim()}
-                    className="shrink-0 rounded-xl border border-[var(--border)] bg-[var(--accent-pink)] px-6 py-3 font-mono text-xs font-bold uppercase tracking-wider text-black shadow-[0_0_15px_var(--bubble-glow-subtle)] transition-all hover:bg-white disabled:opacity-40 cursor-pointer"
-                  >
-                    {downloading ? "Processing..." : "Download"}
-                  </button>
-                )}
-              </div>
-
-              {/* YouTube Fast Download Hub */}
-              {ytVideoId && (
-                <div className="rounded-2xl border border-[var(--border)] bg-black/60 p-5 text-left space-y-3.5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="font-mono text-[0.65rem] font-bold uppercase text-[var(--accent-pink)]">
-                        YouTube Video Detected
-                      </span>
-                      <p className="text-xs text-white font-medium">
-                        Download high-quality MP4 / MP3 directly via CNVMP3:
-                      </p>
-                    </div>
-                    <span className="rounded-md border border-[var(--border)] bg-[var(--accent-pink)]/15 px-2 py-0.5 font-mono text-[0.62rem] text-[var(--accent-pink)] font-bold uppercase">
-                      Fast Converter
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                    <a
-                      href="https://cnvmp3.com/v55"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        navigator.clipboard.writeText(downloadUrl.trim());
-                      }}
-                      className="flex flex-col items-center justify-center gap-1 rounded-xl border border-[var(--accent-pink)] bg-[var(--accent-pink)]/20 p-3.5 font-mono text-xs font-bold text-[var(--accent-pink)] shadow-[0_0_15px_var(--bubble-glow-subtle)] hover:bg-[var(--accent-pink)] hover:text-black transition-all no-underline text-center"
-                    >
-                      <span className="font-bold">CNVMP3 (v55) Fast ↗</span>
-                      <span className="text-[0.65rem] opacity-75 font-normal">Copies link & opens cnvmp3.com</span>
-                    </a>
-
-                    <a
-                      href={`https://ssyoutube.com/`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        navigator.clipboard.writeText(downloadUrl.trim());
-                      }}
-                      className="flex flex-col items-center justify-center gap-1 rounded-xl border border-[var(--border)] bg-black/60 p-3.5 font-mono text-xs font-semibold text-white/90 hover:border-white hover:text-white transition-all no-underline text-center"
-                    >
-                      <span>SSYouTube HD ↗</span>
-                      <span className="text-[0.65rem] opacity-60 font-normal">Fast MP4 video download</span>
-                    </a>
-
-                    <a
-                      href={`https://ytmp3.cc/en/`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        navigator.clipboard.writeText(downloadUrl.trim());
-                      }}
-                      className="flex flex-col items-center justify-center gap-1 rounded-xl border border-[var(--border)] bg-black/60 p-3.5 font-mono text-xs font-semibold text-white/90 hover:border-white hover:text-white transition-all no-underline text-center"
-                    >
-                      <span>Direct Audio (MP3) ↗</span>
-                      <span className="text-[0.65rem] opacity-60 font-normal">High bitrate audio extractor</span>
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              {/* Quality & Mode Controls (for non-YouTube) */}
-              {!ytVideoId && (
-                <div className="flex flex-wrap items-center gap-4 rounded-xl border border-[var(--wired-grid)] bg-black/30 p-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-white/80">Quality:</span>
-                    <select
-                      value={quality}
-                      onChange={(e) => setQuality(e.target.value)}
-                      disabled={isAudioOnly}
-                      className="rounded-lg border border-[var(--border)] bg-black px-2.5 py-1 font-mono text-xs text-white focus:outline-none disabled:opacity-30"
-                    >
-                      <option value="max">Best (4K / 2K)</option>
-                      <option value="1080">1080p Full HD</option>
-                      <option value="720">720p HD</option>
-                      <option value="480">480p</option>
-                    </select>
-                  </div>
-
-                  <label className="flex items-center gap-2 font-mono text-xs text-white/80 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isAudioOnly}
-                      onChange={(e) => setIsAudioOnly(e.target.checked)}
-                      className="h-4 w-4 accent-[var(--accent-pink)] rounded cursor-pointer"
-                    />
-                    <span>Audio Only (MP3)</span>
-                  </label>
-                </div>
-              )}
-            </form>
-
-            {/* Results Output (for TikTok, Twitter, Instagram, Reddit, etc.) */}
-            {!ytVideoId && downloadResult && (
-              <div className="rounded-2xl border border-[var(--border)] bg-black/60 p-4 text-left shadow-lg">
-                {downloadResult.url ? (
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {downloadResult.cover && (
-                        <img
-                          src={downloadResult.cover}
-                          alt=""
-                          className="h-12 w-12 shrink-0 rounded-xl object-cover border border-white/10"
-                        />
-                      )}
-                      <div className="min-w-0">
-                        <span className="font-mono text-[0.65rem] font-bold uppercase text-[var(--accent-pink)]">
-                          {downloadResult.author ? `@${downloadResult.author}` : "Ready to Download"}
-                        </span>
-                        <p className="truncate text-xs font-semibold text-white">
-                          {downloadResult.title || "No-Watermark Media"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <a
-                      href={downloadResult.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="shrink-0 rounded-xl border border-[var(--accent-pink)] bg-[var(--accent-pink)] px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-black text-center shadow-[0_0_15px_var(--bubble-glow-subtle)] transition-all hover:bg-white no-underline cursor-pointer"
-                    >
-                      Save MP4 ↗
-                    </a>
-                  </div>
-                ) : (
-                  <div className="space-y-1 text-red-300">
-                    <p className="font-mono text-xs font-bold uppercase">Download Notice</p>
-                    <p className="text-xs text-white/80">{downloadResult.error}</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Tab 2: Subtitle Sync & Ad Cleaner */}
         {activeTab === "subtitles" && (
