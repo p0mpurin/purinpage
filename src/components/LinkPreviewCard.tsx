@@ -6,6 +6,7 @@ import { isFavorite, toggleFavorite } from "@/lib/favorites";
 interface LinkCardProps {
   name: string;
   url: string;
+  description?: string;
   animationDelay?: string;
   categoryIcon?: string;
 }
@@ -13,6 +14,7 @@ interface LinkCardProps {
 export default function LinkPreviewCard({
   name,
   url,
+  description,
   animationDelay = "0ms",
   categoryIcon,
 }: LinkCardProps) {
@@ -158,6 +160,11 @@ export default function LinkPreviewCard({
         <h3 className="line-clamp-1 text-sm font-bold uppercase tracking-wide text-white transition-colors duration-300 group-hover:text-[var(--accent-pink)] text-glow-pink">
           {name}
         </h3>
+        {description && (
+          <p className="mt-1 line-clamp-2 text-[0.7rem] leading-snug text-[var(--text-main)] opacity-60" title={description}>
+            {description}
+          </p>
+        )}
       </div>
 
       {/* Bottom Bar: Action link with gentle arrow */}

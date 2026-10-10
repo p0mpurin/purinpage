@@ -9,6 +9,12 @@ import LoadingScreen from "@/components/LoadingScreen";
 import LinkPreviewCard from "@/components/LinkPreviewCard";
 import Link from "next/link";
 
+type LinkGroup = { section: string; id: string; links: LinkItem[] };
+
+function sectionId(section: string) {
+  return `section-${section.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "picks"}`;
+}
+
 function isImageIcon(icon: string | undefined) {
   const i = icon || "";
   return i.startsWith("http") || i.startsWith("/");
@@ -74,9 +80,29 @@ export default function CategoryPage() {
     return rawLinks.filter(
       (link) =>
         link.name.toLowerCase().includes(query) ||
-        link.url.toLowerCase().includes(query)
+        link.url.toLowerCase().includes(query) ||
+        link.description?.toLowerCase().includes(query) ||
+        link.section?.toLowerCase().includes(query)
     );
   }, [rawLinks, searchQuery]);
+
+  /** Keeps first-seen order, so hand-picked (unsectioned) links lead and FMHY sections follow. */
+  const groups = useMemo(() => {
+    const map = new Map<string, LinkGroup>();
+    for (const link of filteredLinks) {
+      const section = link.section ?? "";
+      let group = map.get(section);
+      if (!group) {
+        group = { section, id: sectionId(section), links: [] };
+        map.set(section, group);
+      }
+      group.links.push(link);
+    }
+    return [...map.values()];
+  }, [filteredLinks]);
+
+  const showSections = groups.length > 1 || Boolean(groups[0]?.section);
+  const hasFmhyLinks = rawLinks.some((link) => link.section);
 
   const handleAddCustom = (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,6 +209,19 @@ export default function CategoryPage() {
               <p className="mt-0.5 max-w-xl text-xs text-[var(--text-main)] opacity-75">
                 {category.tagline}
               </p>
+              {hasFmhyLinks && (
+                <p className="mt-1 font-mono text-[0.62rem] text-[var(--text-main)] opacity-50">
+                  Includes starred picks from{" "}
+                  <a
+                    href="https://fmhy.net/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--accent-pink)] hover:underline"
+                  >
+                    FMHY
+                  </a>
+                </p>
+              )}
             </div>
           </div>
 
@@ -281,15 +320,45 @@ export default function CategoryPage() {
 
         {/* Grid of Clean Cards */}
         {filteredLinks.length > 0 ? (
-          <div className="grid w-full grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredLinks.map((link, index) => (
-              <LinkPreviewCard
-                key={`${link.url}-${index}`}
-                name={link.name}
-                url={link.url}
-                categoryIcon={category.icon}
-                animationDelay={`${Math.min(index, 20) * 30}ms`}
-              />
+          <div className="flex flex-col gap-10">
+            {/* Section Jump Links */}
+            {showSections && groups.length > 1 && (
+              <nav className="-mt-4 flex gap-1.5 overflow-x-auto pb-2 scrollbar-none sm:mt-0 sm:flex-wrap sm:overflow-visible sm:pb-0" aria-label="Sections">
+                {groups.map((group) => (
+                  <a
+                    key={group.id}
+                    href={`#${group.id}`}
+                    className="shrink-0 rounded-full border border-[var(--wired-grid)] bg-black/30 px-2.5 py-1 font-mono text-[0.65rem] text-[var(--text-main)] no-underline transition-colors hover:border-[var(--accent-pink)]/50 hover:text-white"
+                  >
+                    {group.section || "Hand-Picked"}
+                    <span className="ml-1 opacity-50">{group.links.length}</span>
+                  </a>
+                ))}
+              </nav>
+            )}
+
+            {groups.map((group) => (
+              <section key={group.id} id={group.id} className="scroll-mt-24">
+                {showSections && (
+                  <h2 className="mb-3.5 flex items-center gap-2 font-mono text-sm font-bold uppercase tracking-[0.2em] text-[var(--accent-pink)] text-shadow-pink">
+                    {group.section || "Hand-Picked"}
+                    <span className="h-px flex-1 bg-[var(--wired-grid)]" />
+                    <span className="font-normal tracking-normal opacity-50">{group.links.length}</span>
+                  </h2>
+                )}
+                <div className="grid w-full grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+                  {group.links.map((link, index) => (
+                    <LinkPreviewCard
+                      key={`${link.url}-${index}`}
+                      name={link.name}
+                      url={link.url}
+                      description={link.description}
+                      categoryIcon={category.icon}
+                      animationDelay={`${Math.min(index, 20) * 30}ms`}
+                    />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         ) : (

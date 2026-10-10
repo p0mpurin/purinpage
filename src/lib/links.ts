@@ -1,8 +1,12 @@
+import { fmhyLinks } from "./fmhy-links";
+
 export interface LinkItem {
     name: string;
     url: string;
     icon?: string;
     description?: string;
+    /** Sub-heading the card is grouped under on the category page. */
+    section?: string;
 }
 
 export interface CategoryData {
@@ -16,7 +20,7 @@ export interface CategoryData {
 
 const bulletIcon = "/icons/torrents.jpg";
 
-export const categoryLinks: Record<string, CategoryData> = {
+const baseCategories: Record<string, CategoryData> = {
     favorites: {
         title: "Favorites",
         kanji: "星",
@@ -114,6 +118,44 @@ export const categoryLinks: Record<string, CategoryData> = {
             { name: "123animes.ru", url: "https://123animes.ru/", icon: bulletIcon },
         ],
     },
+    "asian-drama": {
+        title: "Asian Drama",
+        kanji: "韓劇",
+        romaji: "K-Drama / Asian Cinema",
+        tagline: "Korean drama broadcasts, historical sagas & Asian cinema",
+        icon: "/icons/asian-drama.jpg",
+        links: [
+            { name: "asiaflix.net", url: "https://asiaflix.net/home", icon: bulletIcon },
+            { name: "kisskh.id", url: "https://kisskh.id/", icon: bulletIcon },
+            { name: "kissasian.com.lv", url: "https://ww14.kissasian.com.lv/", icon: bulletIcon },
+            { name: "dramacool.com.tr", url: "https://dramacool.com.tr/", icon: bulletIcon },
+            { name: "myasiantv.com.bz", url: "https://myasiantv.com.bz/", icon: bulletIcon },
+            { name: "kisskh.club", url: "https://kisskh.club/", icon: bulletIcon },
+        ],
+    },
+    streaming: {
+        title: "Live TV & Sports",
+        kanji: "放送",
+        romaji: "Hōsō / Relay",
+        tagline: "Live global television networks & sports streams",
+        icon: "/icons/streaming.jpg",
+        links: [
+            { name: "StreamEast", url: "https://streameast.gd/", icon: bulletIcon },
+            { name: "TheTVApp", url: "https://thetvapp.to/", icon: bulletIcon },
+            { name: "Sportsurge", url: "https://sportsurge.net/", icon: bulletIcon },
+            { name: "IPTV-Org", url: "https://iptv-org.github.io/", icon: bulletIcon },
+            { name: "fctv33.hair", url: "https://fctv33.hair/", icon: bulletIcon },
+            { name: "bintv.cc", url: "https://bintv.cc/", icon: bulletIcon },
+            { name: "sportyhunter.xyz", url: "https://sportyhunter.xyz/", icon: bulletIcon },
+            { name: "crackstreams.io", url: "https://crackstreams.io/", icon: bulletIcon },
+            { name: "score808hd.tv", url: "https://score808hd.tv/", icon: bulletIcon },
+            { name: "timstreams.st", url: "https://timstreams.st/", icon: bulletIcon },
+            { name: "globetv.app", url: "https://globetv.app/", icon: bulletIcon },
+            { name: "daddylive.st", url: "https://daddylive.st/", icon: bulletIcon },
+            { name: "tv247us.live", url: "https://tv247us.live/", icon: bulletIcon },
+            { name: "publiciptv.com", url: "https://publiciptv.com/", icon: bulletIcon },
+        ],
+    },
     torrents: {
         title: "Torrents",
         kanji: "急流",
@@ -166,49 +208,18 @@ export const categoryLinks: Record<string, CategoryData> = {
             { name: "getcomics.org", url: "https://getcomics.org/", icon: bulletIcon },
         ],
     },
-    piracy: {
-        title: "Piracy Mega",
-        kanji: "海賊",
-        romaji: "Kaizoku / Vault",
-        tagline: "FMHY, community vaults & mega resources",
-        icon: "/icons/piracy.jpg",
+    books: {
+        title: "Books & Papers",
+        kanji: "書籍",
+        romaji: "Shoseki / Library",
+        tagline: "Academic journals, textbooks, EPUBs & audiobooks",
+        icon: "/icons/books.jpg",
         links: [
-            { name: "FMHY Wiki", url: "https://fmhy.net/", icon: bulletIcon },
-            { name: "Piracy Megathread", url: "https://rentry.co/megathread", icon: bulletIcon },
-            { name: "Champagne Piracy Directory", url: "https://champagne.pages.dev/", icon: bulletIcon },
-            { name: "Ripper Store", url: "https://ripper.store/", icon: bulletIcon },
-        ],
-    },
-    software: {
-        title: "Software",
-        kanji: "電脳",
-        romaji: "Dennō / Programs",
-        tagline: "Repacks, open-source utilities & developer kits",
-        icon: "/icons/software.jpg",
-        links: [
-            { name: "Massgrave (MAS)", url: "https://massgrave.dev/", icon: bulletIcon },
-            { name: "FileCR", url: "https://filecr.com/en/", icon: bulletIcon },
-            { name: "FMHY Software Vault", url: "https://fmhy.net/system-tools", icon: bulletIcon },
-        ],
-    },
-    games: {
-        title: "Games",
-        kanji: "遊戯",
-        romaji: "Yūgi / Game Hub",
-        tagline: "Scene releases, repacks, ROMs & emulators",
-        icon: "/icons/games.jpg",
-        links: [
-            { name: "DODI Repacks", url: "https://dodi-repacks.site/", icon: bulletIcon },
-            { name: "SteamRIP", url: "https://steamrip.com/", icon: bulletIcon },
-            { name: "GOG Games", url: "https://gog-games.to/", icon: bulletIcon },
-            { name: "OnlineFix", url: "https://online-fix.me/", icon: bulletIcon },
-            { name: "Vimm's Lair", url: "https://vimm.net/", icon: bulletIcon },
-            { name: "CS.RIN.RU", url: "https://cs.rin.ru/forum/", icon: bulletIcon },
-            { name: "ankergames.net", url: "https://ankergames.net/", icon: bulletIcon },
-            { name: "g4u.to", url: "https://g4u.to/", icon: bulletIcon },
-            { name: "steamgg.net", url: "https://steamgg.net/", icon: bulletIcon },
-            { name: "m4ckd0ge-repacks.site", url: "https://m4ckd0ge-repacks.site/", icon: bulletIcon },
-            { name: "gload.to", url: "https://gload.to/", icon: bulletIcon },
+            { name: "AudiobookBay", url: "https://audiobookbay.lu/", icon: bulletIcon },
+            { name: "z-lib.gd", url: "https://z-lib.gd/", icon: bulletIcon },
+            { name: "fulllengthaudiobooks.com", url: "https://fulllengthaudiobooks.com/", icon: bulletIcon },
+            { name: "foxit.com", url: "https://www.foxit.com/", icon: bulletIcon },
+            { name: "flowoss.com", url: "https://flowoss.com/", icon: bulletIcon },
         ],
     },
     music: {
@@ -230,34 +241,97 @@ export const categoryLinks: Record<string, CategoryData> = {
             { name: "github.io/downline", url: "https://balkarjun.github.io/downline/", icon: bulletIcon },
         ],
     },
-    books: {
-        title: "Books & Papers",
-        kanji: "書籍",
-        romaji: "Shoseki / Library",
-        tagline: "Academic journals, textbooks, EPUBs & audiobooks",
-        icon: "/icons/books.jpg",
+    "video-tools": {
+        title: "Video Tools",
+        kanji: "映像",
+        romaji: "Eizō / Editing Bay",
+        tagline: "Players, editors, encoders & watch-party sync",
+        icon: "/icons/video-tools.jpg",
+        links: [],
+    },
+    games: {
+        title: "Games",
+        kanji: "遊戯",
+        romaji: "Yūgi / Game Hub",
+        tagline: "Scene releases, repacks, ROMs & emulators",
+        icon: "/icons/games.jpg",
         links: [
-            { name: "AudiobookBay", url: "https://audiobookbay.lu/", icon: bulletIcon },
-            { name: "z-lib.gd", url: "https://z-lib.gd/", icon: bulletIcon },
-            { name: "fulllengthaudiobooks.com", url: "https://fulllengthaudiobooks.com/", icon: bulletIcon },
-            { name: "foxit.com", url: "https://www.foxit.com/", icon: bulletIcon },
-            { name: "flowoss.com", url: "https://flowoss.com/", icon: bulletIcon },
+            { name: "DODI Repacks", url: "https://dodi-repacks.site/", icon: bulletIcon },
+            { name: "SteamRIP", url: "https://steamrip.com/", icon: bulletIcon },
+            { name: "GOG Games", url: "https://gog-games.to/", icon: bulletIcon },
+            { name: "OnlineFix", url: "https://online-fix.me/", icon: bulletIcon },
+            { name: "Vimm's Lair", url: "https://vimm.net/", icon: bulletIcon },
+            { name: "CS.RIN.RU", url: "https://cs.rin.ru/forum/", icon: bulletIcon },
+            { name: "ankergames.net", url: "https://ankergames.net/", icon: bulletIcon },
+            { name: "g4u.to", url: "https://g4u.to/", icon: bulletIcon },
+            { name: "steamgg.net", url: "https://steamgg.net/", icon: bulletIcon },
+            { name: "m4ckd0ge-repacks.site", url: "https://m4ckd0ge-repacks.site/", icon: bulletIcon },
+            { name: "gload.to", url: "https://gload.to/", icon: bulletIcon },
         ],
     },
-    "asian-drama": {
-        title: "Asian Drama",
-        kanji: "韓劇",
-        romaji: "K-Drama / Asian Cinema",
-        tagline: "Korean drama broadcasts, historical sagas & Asian cinema",
-        icon: "/icons/asian-drama.jpg",
+    "browser-games": {
+        title: "Browser Games",
+        kanji: "遊び",
+        romaji: "Asobi / Arcade",
+        tagline: "Instant browser games, puzzles & retro emulators",
+        icon: "/icons/browser-games.jpg",
+        links: [],
+    },
+    "game-tools": {
+        title: "Game Tools",
+        kanji: "改造",
+        romaji: "Kaizō / Mods",
+        tagline: "Mods, launchers, homebrew & game-specific tools",
+        icon: "/icons/game-tools.jpg",
+        links: [],
+    },
+    piracy: {
+        title: "Piracy Mega",
+        kanji: "海賊",
+        romaji: "Kaizoku / Vault",
+        tagline: "FMHY, community vaults & mega resources",
+        icon: "/icons/piracy.jpg",
         links: [
-            { name: "asiaflix.net", url: "https://asiaflix.net/home", icon: bulletIcon },
-            { name: "kisskh.id", url: "https://kisskh.id/", icon: bulletIcon },
-            { name: "kissasian.com.lv", url: "https://ww14.kissasian.com.lv/", icon: bulletIcon },
-            { name: "dramacool.com.tr", url: "https://dramacool.com.tr/", icon: bulletIcon },
-            { name: "myasiantv.com.bz", url: "https://myasiantv.com.bz/", icon: bulletIcon },
-            { name: "kisskh.club", url: "https://kisskh.club/", icon: bulletIcon },
+            { name: "FMHY Wiki", url: "https://fmhy.net/", icon: bulletIcon },
+            { name: "Piracy Megathread", url: "https://rentry.co/megathread", icon: bulletIcon },
+            { name: "Champagne Piracy Directory", url: "https://champagne.pages.dev/", icon: bulletIcon },
+            { name: "Ripper Store", url: "https://ripper.store/", icon: bulletIcon },
         ],
+    },
+    software: {
+        title: "Software",
+        kanji: "電脳",
+        romaji: "Dennō / Programs",
+        tagline: "Repacks, open-source utilities & developer kits",
+        icon: "/icons/software.jpg",
+        links: [
+            { name: "Massgrave (MAS)", url: "https://massgrave.dev/", icon: bulletIcon },
+            { name: "FMHY Software Vault", url: "https://fmhy.net/system-tools", icon: bulletIcon },
+        ],
+    },
+    linux: {
+        title: "Linux & macOS",
+        kanji: "端末",
+        romaji: "Tanmatsu / Terminal",
+        tagline: "Linux distros, Mac apps & desktop customization",
+        icon: "/icons/linux.jpg",
+        links: [],
+    },
+    mobile: {
+        title: "Android & iOS",
+        kanji: "携帯",
+        romaji: "Keitai / Mobile",
+        tagline: "APKs, iPAs, sideloading & mobile utilities",
+        icon: "/icons/mobile.jpg",
+        links: [],
+    },
+    ai: {
+        title: "AI",
+        kanji: "人工知能",
+        romaji: "Jinkō Chinō / AI",
+        tagline: "Chatbots, local models, image & audio generation",
+        icon: "/icons/ai.jpg",
+        links: [],
     },
     adblockers: {
         title: "AdBlockers",
@@ -289,28 +363,51 @@ export const categoryLinks: Record<string, CategoryData> = {
             { name: "VeePN", url: "https://veepn.com/", icon: bulletIcon },
         ],
     },
-    streaming: {
-        title: "Live TV & Sports",
-        kanji: "放送",
-        romaji: "Hōsō / Relay",
-        tagline: "Live global television networks & sports streams",
-        icon: "/icons/streaming.jpg",
+    privacy: {
+        title: "Privacy",
+        kanji: "秘密",
+        romaji: "Himitsu / Privacy",
+        tagline: "Privacy guides, encrypted messengers & anti-malware",
+        icon: "/icons/cyber.jpg",
+        links: [],
+    },
+    tools: {
+        title: "Web Tools",
+        kanji: "道具",
+        romaji: "Dōgu / Toolkit",
+        tagline: "Browser extensions, temp mail, password managers & URL tools",
+        icon: "/icons/tools.jpg",
         links: [
-            { name: "StreamEast", url: "https://streameast.gd/", icon: bulletIcon },
-            { name: "TheTVApp", url: "https://thetvapp.to/", icon: bulletIcon },
-            { name: "Sportsurge", url: "https://sportsurge.net/", icon: bulletIcon },
-            { name: "IPTV-Org", url: "https://iptv-org.github.io/", icon: bulletIcon },
-            { name: "fctv33.hair", url: "https://fctv33.hair/", icon: bulletIcon },
-            { name: "bintv.cc", url: "https://bintv.cc/", icon: bulletIcon },
-            { name: "sportyhunter.xyz", url: "https://sportyhunter.xyz/", icon: bulletIcon },
-            { name: "crackstreams.io", url: "https://crackstreams.io/", icon: bulletIcon },
-            { name: "score808hd.tv", url: "https://score808hd.tv/", icon: bulletIcon },
-            { name: "timstreams.st", url: "https://timstreams.st/", icon: bulletIcon },
-            { name: "globetv.app", url: "https://globetv.app/", icon: bulletIcon },
-            { name: "daddylive.st", url: "https://daddylive.st/", icon: bulletIcon },
-            { name: "tv247us.live", url: "https://tv247us.live/", icon: bulletIcon },
-            { name: "publiciptv.com", url: "https://publiciptv.com/", icon: bulletIcon },
+            { name: "Cobalt.tools", url: "https://cobalt.tools/", icon: bulletIcon },
+            { name: "CyberChef", url: "https://gchq.github.io/CyberChef/", icon: bulletIcon },
+            { name: "Temp-Mail", url: "https://temp-mail.org/", icon: bulletIcon },
+            { name: "File.io", url: "https://www.file.io/", icon: bulletIcon },
+            { name: "WebTorrent IO", url: "https://webtorrent.io/", icon: bulletIcon },
         ],
+    },
+    files: {
+        title: "File Tools",
+        kanji: "書類",
+        romaji: "Shorui / Files",
+        tagline: "File hosts, converters, download managers & PDF tools",
+        icon: "/icons/files.jpg",
+        links: [],
+    },
+    text: {
+        title: "Text & Fonts",
+        kanji: "文字",
+        romaji: "Moji / Writing",
+        tagline: "Note-taking, office suites, fonts & translators",
+        icon: "/icons/text.jpg",
+        links: [],
+    },
+    social: {
+        title: "Social Media",
+        kanji: "交流",
+        romaji: "Kōryū / Social",
+        tagline: "YouTube, Discord, Reddit & Twitch tools",
+        icon: "/icons/social.jpg",
+        links: [],
     },
     design: {
         title: "Art & Assets",
@@ -325,18 +422,57 @@ export const categoryLinks: Record<string, CategoryData> = {
             { name: "Poly Pizza", url: "https://poly.pizza/", icon: bulletIcon },
         ],
     },
-    tools: {
-        title: "Web Tools",
-        kanji: "道具",
-        romaji: "Dōgu / Toolkit",
-        tagline: "Cobalt downloaders, link sanitizers & DNS testers",
-        icon: "/icons/tools.jpg",
-        links: [
-            { name: "Cobalt.tools", url: "https://cobalt.tools/", icon: bulletIcon },
-            { name: "CyberChef", url: "https://gchq.github.io/CyberChef/", icon: bulletIcon },
-            { name: "Temp-Mail", url: "https://temp-mail.org/", icon: bulletIcon },
-            { name: "File.io", url: "https://www.file.io/", icon: bulletIcon },
-            { name: "WebTorrent IO", url: "https://webtorrent.io/", icon: bulletIcon },
-        ],
+    dev: {
+        title: "Developer",
+        kanji: "開発",
+        romaji: "Kaihatsu / Dev",
+        tagline: "IDEs, hosting, web dev & reverse engineering",
+        icon: "/icons/dev.jpg",
+        links: [],
+    },
+    learning: {
+        title: "Education",
+        kanji: "学習",
+        romaji: "Gakushū / Study",
+        tagline: "Courses, languages, science, math & study tools",
+        icon: "/icons/learning.jpg",
+        links: [],
+    },
+    misc: {
+        title: "Misc",
+        kanji: "雑多",
+        romaji: "Zatta / Everything Else",
+        tagline: "Fun sites, health, food, maps, news & shopping",
+        icon: "/icons/misc.jpg",
+        links: [],
     },
 };
+
+/** Hosts where many unrelated projects live side by side, so the first path segment matters. */
+const SHARED_HOSTS = new Set(["github.com", "gitlab.com", "codeberg.org", "rentry.co", "rentry.org", "t.me"]);
+
+function hostKey(url: string): string {
+    try {
+        const u = new URL(url);
+        const host = u.hostname.replace(/^www\./, "").toLowerCase();
+        return SHARED_HOSTS.has(host) ? `${host}/${u.pathname.split("/")[1]?.toLowerCase() ?? ""}` : host;
+    } catch {
+        return url;
+    }
+}
+
+/**
+ * Hand-picked links first, then FMHY's starred picks (see scripts/sync-fmhy.ts).
+ * When FMHY lists the same site, its entry wins since it carries a section + description.
+ */
+function mergeCategory(slug: string, base: CategoryData): CategoryData {
+    const extra = fmhyLinks[slug];
+    if (!extra?.length) return base;
+    const fmhyHosts = new Set(extra.map((l) => hostKey(l.url)));
+    const manual = base.links.filter((l) => !fmhyHosts.has(hostKey(l.url)));
+    return { ...base, links: [...manual, ...extra] };
+}
+
+export const categoryLinks: Record<string, CategoryData> = Object.fromEntries(
+    Object.entries(baseCategories).map(([slug, data]) => [slug, mergeCategory(slug, data)]),
+);

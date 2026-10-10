@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "check-links": "tsx scripts/check-dead-links.ts"
+    "check-links": "tsx scripts/check-dead-links.ts",
+    "sync-fmhy": "tsx scripts/sync-fmhy.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.91.0",
