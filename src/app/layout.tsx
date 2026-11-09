@@ -32,7 +32,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: editionScript }} />
       </head>
-      <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)] antialiased">
+      <body className="antialiased">
         <Navbar />
         {children}
       </body>

@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { createSupabaseClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import LoadingScreen from "@/components/LoadingScreen";
+import PageHead from "@/components/zine/PageHead";
+
+const AVATAR_URL = "https://i.pinimg.com/736x/eb/10/74/eb1074d1a298aeaee9682e6f4b728437.jpg";
 
 export default function ProfilePage() {
     const [loading, setLoading] = useState(true);
@@ -61,7 +64,7 @@ export default function ProfilePage() {
 
             if (error) throw error;
 
-            setMessage({ text: "Profile updated successfully!", type: "success" });
+            setMessage({ text: "Saved. Use your new details next time you log in.", type: "success" });
             setNewPassword(""); // Clear password field for security
 
         } catch (err: unknown) {
@@ -74,76 +77,59 @@ export default function ProfilePage() {
     };
 
     if (loading) {
-        return (
-            <div className="flex min-h-screen items-center justify-center">
-                <LoadingScreen label="Loading" />
-            </div>
-        );
+        return <LoadingScreen label="Loading" />;
     }
 
     return (
-        <div className="min-h-screen w-screen flex flex-col items-center justify-center p-4 md:p-8 pt-4 md:pt-8 pb-20 overflow-y-auto">
-            <div className="max-w-[1200px] mx-auto w-full flex items-center justify-center">
-                <div className="glass-panel p-8 md:p-12 w-full max-w-xl flex flex-col gap-6 border border-[var(--wired-grid)]">
+        <main className="z-page">
+            <div className="z-wrap z-pad">
+                <PageHead kanji="個人" romaji="Kojin / Profile" title="Profile" deck="Change the name and password you sign in with." />
 
-                    <button
-                        onClick={handleBack}
-                        className="self-start text-[var(--secondary)] hover:text-[var(--accent-pink)] transition-colors duration-200 flex items-center gap-2 mb-2"
-                    >
-                        ← Back to Dashboard
-                    </button>
+                <section className="f-spread">
+                    <div className="f-avatar img lit" style={{ "--img": `url("${AVATAR_URL}")` } as CSSProperties} role="img" aria-label="Your avatar" />
 
-                    <div className="flex flex-col items-center gap-6 mb-8 w-full border-b border-[var(--wired-grid)] pb-8">
-                        <h1 className="text-[2rem] md:text-[2.5rem] font-bold text-center text-[var(--accent-pink)]">MY PROFILE</h1>
-                        <div className="w-32 h-32 bg-[var(--background)] rounded-full flex items-center justify-center border-4 border-[var(--accent-pink)] shadow-[0_0_20px_var(--accent-pink)] shrink-0 overflow-hidden relative group">
-                            <img
-                                src="https://i.pinimg.com/736x/eb/10/74/eb1074d1a298aeaee9682e6f4b728437.jpg"
-                                alt="Avatar"
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            />
-                            <div className="absolute inset-0 bg-[var(--accent-pink)] opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-                        </div>
-                        <p className="text-[var(--foreground)] opacity-70 text-center text-sm uppercase tracking-widest">System Administrator</p>
-                    </div>
+                    <form onSubmit={handleUpdateProfile} className="f-form">
+                        {message && <p className={`z-msg ${message.type === "success" ? "good" : "bad"}`} role="status">{message.text}</p>}
 
-                    {message && (
-                        <div className={`p-3 rounded-md text-center border ${message.type === 'success' ? "bg-green-500/10 border-green-500/50 text-green-200" : "bg-red-500/10 border-red-500/50 text-red-200"}`}>
-                            {message.text}
-                        </div>
-                    )}
-
-                    <form onSubmit={handleUpdateProfile} className="flex flex-col gap-6">
-                        <div>
-                            <label className="block mb-2 font-medium">Username</label>
+                        <label className="z-field" htmlFor="profile-username">
+                            <span>Username</span>
                             <input
+                                id="profile-username"
                                 type="text"
-                                className="input-field w-full"
+                                className="z-input"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                placeholder="New Username"
+                                placeholder="New username"
+                                autoComplete="username"
+                                autoCapitalize="none"
                             />
-                            <p className="text-xs text-[var(--secondary)] mt-1">
-                                Changing this will change your login username.
-                            </p>
-                        </div>
+                        </label>
+                        <p className="hint">Changing this also changes the name you log in with.</p>
 
-                        <div>
-                            <label className="block mb-2 font-medium">New Password</label>
+                        <label className="z-field" htmlFor="profile-password">
+                            <span>New password</span>
                             <input
+                                id="profile-password"
                                 type="password"
-                                className="input-field w-full"
+                                className="z-input"
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="Leave blank to keep current"
+                                placeholder="Leave blank to keep your current one"
+                                autoComplete="new-password"
                             />
-                        </div>
+                        </label>
 
-                        <button type="submit" className="primary-btn w-full py-3 mt-2">
-                            Save Changes
-                        </button>
+                        <div className="z-btn-row">
+                            <button type="submit" className="z-btn">
+                                Save changes
+                            </button>
+                            <button type="button" className="z-btn ghost" onClick={handleBack}>
+                                Back to contents
+                            </button>
+                        </div>
                     </form>
-                </div>
+                </section>
             </div>
-        </div>
+        </main>
     );
-}   
+}

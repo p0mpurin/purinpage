@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
+import PageHead from "@/components/zine/PageHead";
 import {
   parseSubtitles,
   shiftAndCleanSubtitles,
@@ -25,8 +26,8 @@ type ToolTab = "subtitles" | "cleaner" | "torrent" | "doh";
 const TABS: { id: ToolTab; label: string }[] = [
   { id: "subtitles", label: "Subtitle Fixer" },
   { id: "cleaner", label: "Link Cleaner" },
-  { id: "torrent", label: "Magnet Stream" },
-  { id: "doh", label: "DNS Bypass" },
+  { id: "torrent", label: "Magnet Inspector" },
+  { id: "doh", label: "Blocked Site Check" },
 ];
 
 export default function ToolsPage() {
@@ -221,464 +222,279 @@ export default function ToolsPage() {
     }
   };
 
+  const stepLabel = (ms: number) =>
+    `${ms > 0 ? "+" : "−"}${Math.abs(ms) >= 1000 ? `${Math.abs(ms) / 1000}s` : `${Math.abs(ms)}ms`}`;
+
   return (
-    <div className="relative min-h-[calc(100vh-5rem)] w-full px-4 pb-20 pt-4 sm:px-8 md:px-12 md:pt-6">
-      
-      {/* Background Soft Glow */}
-      <div
-        className="pointer-events-none absolute left-1/2 top-16 h-96 w-96 -translate-x-1/2 rounded-full bg-[var(--accent-pink)] opacity-[0.06] blur-[140px]"
-        aria-hidden
-      />
+    <main className="z-page">
+      <div className="z-wrap z-pad">
+        <PageHead
+          kanji="道具"
+          romaji="Dōgu / Toolkit"
+          title="Tools"
+          deck="Small fixes for subtitles, links, magnets and blocked sites. Everything runs in your browser except the DNS check."
+        />
 
-      <div className="mx-auto flex max-w-5xl flex-col gap-6">
-        
-        {/* Futuristic Header & Cyber Tab Navigation */}
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--wired-grid)] pb-5">
-          <div className="text-left">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-pink)] shadow-[0_0_8px_var(--accent-pink)]" />
-              <span className="font-mono text-[0.65rem] uppercase tracking-[0.3em] text-[var(--accent-pink)] opacity-90">
-                [SYS.UTILITIES // SUITE]
-              </span>
-            </div>
-            <h1 className="text-2xl font-bold uppercase tracking-wider text-white text-shadow-pink sm:text-3xl">
-              Power Tools
-            </h1>
-          </div>
+        <div className="z-tabs" role="tablist" aria-label="Tools">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-          {/* Cyber Tab Switcher */}
-          <nav className="flex items-center gap-1.5 overflow-x-auto rounded-2xl border border-[var(--border)] bg-[#0c0a14]/80 p-1.5 backdrop-blur-xl shadow-lg scrollbar-none">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`shrink-0 rounded-xl px-3.5 py-1.5 font-mono text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-                  activeTab === tab.id
-                    ? "bg-[var(--accent-pink)]/20 text-[var(--accent-pink)] shadow-[0_0_15px_var(--bubble-glow-subtle)] border border-[var(--border)]"
-                    : "text-[var(--text-main)] hover:text-white hover:bg-white/[0.05]"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        </header>
-
-        {/* Tab 2: Subtitle Sync & Ad Cleaner */}
         {activeTab === "subtitles" && (
-          <div className="glass-card-dream flex flex-col gap-6 rounded-3xl border border-[var(--border)] bg-[#09070e]/90 p-6 sm:p-8 shadow-2xl">
-            <div className="space-y-1 text-left">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[0.62rem] font-bold uppercase text-[var(--accent-pink)]">
-                  [TIMING & FILTER // SRT + VTT]
-                </span>
-              </div>
-              <h2 className="text-lg font-bold text-white">
-                Subtitle Synchronizer & Ad Cleaner
-              </h2>
-              <p className="text-xs text-[var(--text-main)] opacity-75">
-                Fix out-of-sync audio timing, strip gambling & site watermark ads, and convert between SRT and VTT formats.
-              </p>
-            </div>
+          <section className="z-panel" role="tabpanel">
+            <header>
+              <span className="c-no">SRT + VTT</span>
+              <h2>Subtitle fixer</h2>
+              <p>Shift out-of-sync timing, strip gambling and watermark ads, and convert between SRT and VTT.</p>
+            </header>
 
-            {/* Drop Zone / Upload Button */}
-            <div className="flex flex-col gap-4">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".srt,.vtt,.ass,.txt"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
+            <input
+              ref={fileInputRef}
+              id="subtitle-file"
+              type="file"
+              accept=".srt,.vtt,.ass,.txt"
+              onChange={handleFileUpload}
+              hidden
+            />
+            <button type="button" className="z-drop" onClick={() => fileInputRef.current?.click()}>
+              <b>{rawCues.length > 0 ? `${subFileName} · ${rawCues.length} lines` : "Choose a subtitle file"}</b>
+              <small>{rawCues.length > 0 ? "Click to pick a different file" : ".srt, .vtt or plain text"}</small>
+            </button>
 
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--border)] bg-black/40 p-8 text-center transition-all hover:border-[var(--accent-pink)] hover:bg-[var(--accent-pink)]/5 cursor-pointer"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--accent-pink)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-                <p className="font-mono text-xs font-bold text-white uppercase tracking-wider">
-                  {rawCues.length > 0 ? `Loaded: ${subFileName} (${rawCues.length} Cues)` : "Drop or Click to Upload .SRT / .VTT Subtitle"}
-                </p>
-                <p className="font-mono text-[0.68rem] text-[var(--text-main)] opacity-60">
-                  Supports .srt, .vtt, and text files
-                </p>
-              </div>
-
-              {/* Subtitle Controls */}
-              {rawCues.length > 0 && (
-                <div className="space-y-4 rounded-2xl border border-[var(--border)] bg-black/60 p-5 text-left">
-                  
-                  {/* Offset & Timing Sliders / Buttons */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs font-bold uppercase text-white">
-                        Timing Offset: {offsetMs > 0 ? `+${offsetMs}ms` : `${offsetMs}ms`} ({(offsetMs / 1000).toFixed(2)}s)
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleApplySubChanges(0, cleanAds)}
-                        className="font-mono text-[0.68rem] text-[var(--accent-pink)] hover:underline cursor-pointer"
-                      >
-                        Reset Offset (0ms)
-                      </button>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => handleApplySubChanges(offsetMs - 1000, cleanAds)}
-                        className="rounded-lg border border-[var(--border)] bg-black/60 px-2.5 py-1 font-mono text-xs text-white hover:border-[var(--accent-pink)] cursor-pointer"
-                      >
-                        -1.0s
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleApplySubChanges(offsetMs - 500, cleanAds)}
-                        className="rounded-lg border border-[var(--border)] bg-black/60 px-2.5 py-1 font-mono text-xs text-white hover:border-[var(--accent-pink)] cursor-pointer"
-                      >
-                        -500ms
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleApplySubChanges(offsetMs - 100, cleanAds)}
-                        className="rounded-lg border border-[var(--border)] bg-black/60 px-2.5 py-1 font-mono text-xs text-white hover:border-[var(--accent-pink)] cursor-pointer"
-                      >
-                        -100ms
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleApplySubChanges(offsetMs + 100, cleanAds)}
-                        className="rounded-lg border border-[var(--border)] bg-black/60 px-2.5 py-1 font-mono text-xs text-white hover:border-[var(--accent-pink)] cursor-pointer"
-                      >
-                        +100ms
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleApplySubChanges(offsetMs + 500, cleanAds)}
-                        className="rounded-lg border border-[var(--border)] bg-black/60 px-2.5 py-1 font-mono text-xs text-white hover:border-[var(--accent-pink)] cursor-pointer"
-                      >
-                        +500ms
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleApplySubChanges(offsetMs + 1000, cleanAds)}
-                        className="rounded-lg border border-[var(--border)] bg-black/60 px-2.5 py-1 font-mono text-xs text-white hover:border-[var(--accent-pink)] cursor-pointer"
-                      >
-                        +1.0s
-                      </button>
+            {rawCues.length > 0 && (
+              <div className="z-box">
+                <div className="z-box-row">
+                  <div>
+                    <span className="z-label">Timing offset</span>
+                    <div className="z-value">
+                      {offsetMs > 0 ? `+${offsetMs}` : offsetMs}ms ({(offsetMs / 1000).toFixed(2)}s)
                     </div>
                   </div>
-
-                  {/* Ad Cleaning & Export Format */}
-                  <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--wired-grid)] pt-4">
-                    <label className="flex items-center gap-2 font-mono text-xs text-white cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={cleanAds}
-                        onChange={(e) => handleApplySubChanges(offsetMs, e.target.checked)}
-                        className="h-4 w-4 accent-[var(--accent-pink)] rounded cursor-pointer"
-                      />
-                      <span>Auto-Strip Ad Watermarks ({adsCount} removed)</span>
-                    </label>
-
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-white/80">Format:</span>
-                      <select
-                        value={exportFormat}
-                        onChange={(e) => setExportFormat(e.target.value as "srt" | "vtt")}
-                        className="rounded-lg border border-[var(--border)] bg-black px-2.5 py-1 font-mono text-xs text-white focus:outline-none"
-                      >
-                        <option value="srt">.SRT (Standard)</option>
-                        <option value="vtt">.VTT (Web Video)</option>
-                      </select>
-
-                      <button
-                        type="button"
-                        onClick={handleDownloadSub}
-                        className="rounded-xl border border-[var(--accent-pink)] bg-[var(--accent-pink)] px-4 py-1.5 font-mono text-xs font-bold uppercase text-black hover:bg-white transition-all cursor-pointer"
-                      >
-                        Export & Download ↗
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Subtitle Cue Preview */}
-                  <div className="max-h-48 overflow-y-auto rounded-xl border border-[var(--wired-grid)] bg-black/40 p-3 font-mono text-xs text-white/80 space-y-2">
-                    {processedCues.slice(0, 15).map((cue) => (
-                      <div key={cue.id} className="flex gap-3 border-b border-white/5 pb-1.5">
-                        <span className="text-[var(--accent-pink)] opacity-70">#{cue.id}</span>
-                        <span className="text-white/40">{cue.startTimeStr} → {cue.endTimeStr}</span>
-                        <span className="truncate text-white flex-1">{cue.text}</span>
-                      </div>
-                    ))}
-                    {processedCues.length > 15 && (
-                      <p className="text-center text-[0.65rem] text-[var(--text-main)] opacity-50 pt-1">
-                        ...and {processedCues.length - 15} more cues
-                      </p>
-                    )}
-                  </div>
-
+                  <button type="button" className="z-link-btn" onClick={() => handleApplySubChanges(0, cleanAds)}>
+                    Reset to 0
+                  </button>
                 </div>
-              )}
-            </div>
-          </div>
+                <div className="z-btn-row">
+                  {[-1000, -500, -100, 100, 500, 1000].map((step) => (
+                    <button
+                      key={step}
+                      type="button"
+                      className="z-btn ghost small"
+                      onClick={() => handleApplySubChanges(offsetMs + step, cleanAds)}
+                    >
+                      {stepLabel(step)}
+                    </button>
+                  ))}
+                </div>
+                <div className="z-box-row">
+                  <label className="z-check" htmlFor="clean-ads">
+                    <input
+                      id="clean-ads"
+                      type="checkbox"
+                      checked={cleanAds}
+                      onChange={(e) => handleApplySubChanges(offsetMs, e.target.checked)}
+                    />
+                    Remove ad lines ({adsCount} removed)
+                  </label>
+                  <div className="z-btn-row">
+                    <select
+                      id="export-format"
+                      className="z-select"
+                      value={exportFormat}
+                      onChange={(e) => setExportFormat(e.target.value as "srt" | "vtt")}
+                      aria-label="File format"
+                    >
+                      <option value="srt">.srt</option>
+                      <option value="vtt">.vtt</option>
+                    </select>
+                    <button type="button" className="z-btn" onClick={handleDownloadSub}>
+                      Download
+                    </button>
+                  </div>
+                </div>
+                <div className="z-cues">
+                  {processedCues.slice(0, 15).map((cue) => (
+                    <div key={cue.id}>
+                      <span>#{cue.id}</span>
+                      <span>
+                        {cue.startTimeStr} → {cue.endTimeStr}
+                      </span>
+                      <span>{cue.text}</span>
+                    </div>
+                  ))}
+                  {processedCues.length > 15 && <p>…and {processedCues.length - 15} more lines</p>}
+                </div>
+              </div>
+            )}
+          </section>
         )}
 
-        {/* Tab 3: Privacy Link Cleaner & Tracker Stripper */}
         {activeTab === "cleaner" && (
-          <div className="glass-card-dream flex flex-col gap-6 rounded-3xl border border-[var(--border)] bg-[#09070e]/90 p-6 sm:p-8 shadow-2xl">
-            <div className="space-y-1 text-left">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[0.62rem] font-bold uppercase text-[var(--accent-pink)]">
-                  [PRIVACY // 40+ PARAMS]
-                </span>
-              </div>
-              <h2 className="text-lg font-bold text-white">
-                Privacy Link Cleaner & Tracker Stripper
-              </h2>
-              <p className="text-xs text-[var(--text-main)] opacity-75">
-                Strips tracking telemetry, analytics, affiliate IDs, and redirect wrappers from messy URLs.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="block font-mono text-xs font-semibold uppercase text-white/80 mb-2 text-left">
-                  Paste Bloated URL
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="https://twitter.com/user/status/12345?s=20&t=abcdef123&utm_source=share..."
-                  value={dirtyUrl}
-                  onChange={(e) => handleCleanUrl(e.target.value)}
-                  className="w-full rounded-xl border border-[var(--border)] bg-black/60 p-3.5 font-mono text-xs text-white placeholder:text-white/30 focus:border-[var(--accent-pink)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-pink)]"
-                />
-              </div>
-
-              {cleanedUrl && (
-                <div className="space-y-2 rounded-2xl border border-[var(--border)] bg-black/50 p-4 text-left">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold uppercase text-[var(--accent-pink)]">
-                      Cleaned URL ({strippedCount} Trackers Removed)
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleCopyCleaned}
-                      className="rounded-lg border border-[var(--border)] bg-[var(--accent-pink)]/20 px-3 py-1 font-mono text-xs font-bold text-[var(--accent-pink)] hover:bg-[var(--accent-pink)] hover:text-black transition-all cursor-pointer"
-                    >
-                      {copiedCleaner ? "Copied" : "Copy Clean URL"}
-                    </button>
-                  </div>
-                  <p className="break-all font-mono text-xs text-white bg-black/60 p-3 rounded-xl border border-white/10">
-                    {cleanedUrl}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Tab 4: In-Browser WebTorrent & Magnet Streamer */}
-        {activeTab === "torrent" && (
-          <div className="glass-card-dream flex flex-col gap-6 rounded-3xl border border-[var(--border)] bg-[#09070e]/90 p-6 sm:p-8 shadow-2xl">
-            <div className="space-y-1 text-left">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[0.62rem] font-bold uppercase text-[var(--accent-pink)]">
-                  [P2P // DEBRID & TORBOX]
-                </span>
-              </div>
-              <h2 className="text-lg font-bold text-white">
-                Magnet Link Inspector & Streamer
-              </h2>
-              <p className="text-xs text-[var(--text-main)] opacity-75">
-                Inspect magnet infohashes, file titles, trackers, or open directly in WebTorrent players.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="block font-mono text-xs font-semibold uppercase text-white/80 mb-2 text-left">
-                  Paste Magnet Link (magnet:?xt=urn:btih:...)
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="magnet:?xt=urn:btih:d6b6e4d588523c9213...&dn=Sample.Movie.1080p&tr=..."
-                  value={magnetInput}
-                  onChange={(e) => handleParseMagnet(e.target.value)}
-                  className="w-full rounded-xl border border-[var(--border)] bg-black/60 p-3.5 font-mono text-xs text-white placeholder:text-white/30 focus:border-[var(--accent-pink)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-pink)]"
-                />
-              </div>
-
-              {parsedMagnetInfo && (
-                <div className="space-y-4 rounded-2xl border border-[var(--border)] bg-black/50 p-5 text-left">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-[var(--wired-grid)] pb-3">
-                    <div>
-                      <span className="font-mono text-[0.65rem] uppercase text-[var(--accent-pink)]">
-                        Torrent Name
-                      </span>
-                      <h3 className="text-sm font-bold text-white">
-                        {parsedMagnetInfo.name}
-                      </h3>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleCopyHash}
-                      className="shrink-0 rounded-lg border border-[var(--border)] bg-black/60 px-3 py-1.5 font-mono text-xs text-white hover:border-[var(--accent-pink)] hover:text-[var(--accent-pink)] transition-colors cursor-pointer"
-                    >
-                      {copiedMagnet ? "Copied Hash" : parsedMagnetInfo.hash ? `Hash: ${parsedMagnetInfo.hash.slice(0, 10)}...` : "Copy Hash"}
-                    </button>
-                  </div>
-
-                  {/* Web Launchers */}
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <a
-                      href={`https://webtorrent.io/free-torrents#${encodeURIComponent(streamMagnet)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-xl border border-[var(--border)] bg-[var(--accent-pink)]/15 px-4 py-2 font-mono text-xs font-bold text-[var(--accent-pink)] hover:bg-[var(--accent-pink)] hover:text-black transition-all no-underline"
-                    >
-                      Launch in WebTorrent Player ↗
-                    </a>
-                    <a
-                      href={`https://real-debrid.com/torrents`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-xl border border-[var(--border)] bg-black/60 px-4 py-2 font-mono text-xs text-white/80 hover:border-white hover:text-white transition-all no-underline"
-                    >
-                      Open Real-Debrid ↗
-                    </a>
-                    <a
-                      href={`https://torbox.app`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-xl border border-[var(--border)] bg-black/60 px-4 py-2 font-mono text-xs text-white/80 hover:border-white hover:text-white transition-all no-underline"
-                    >
-                      Open TorBox ↗
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Tab 5: ISP Block & DNS-over-HTTPS Tester */}
-        {activeTab === "doh" && (
-          <div className="glass-card-dream flex flex-col gap-6 rounded-3xl border border-[var(--border)] bg-[#09070e]/90 p-6 sm:p-8 shadow-2xl">
-            <div className="space-y-1 text-left">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[0.62rem] font-bold uppercase text-[var(--accent-pink)]">
-                  [NETWORK // DOH RESOLUTION]
-                </span>
-              </div>
-              <h2 className="text-lg font-bold text-white">
-                ISP Block & DNS Bypass Tester
-              </h2>
-              <p className="text-xs text-[var(--text-main)] opacity-75">
-                Tests if a site is blocked or DNS-poisoned by your local ISP across Cloudflare, Google, Quad9, and AdGuard.
-              </p>
-            </div>
-
-            <form onSubmit={handleTestDoh} className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                placeholder="Enter domain (e.g. 1337x.to, thepiratebay.org, aniwave.to)..."
-                value={dohDomain}
-                onChange={(e) => setDohDomain(e.target.value)}
-                className="w-full rounded-xl border border-[var(--border)] bg-black/60 px-4 py-3 font-mono text-xs text-white placeholder:text-white/30 focus:border-[var(--accent-pink)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-pink)]"
+          <section className="z-panel" role="tabpanel">
+            <header>
+              <span className="c-no">40+ TRACKERS</span>
+              <h2>Link cleaner</h2>
+              <p>Paste a messy link. Tracking tags, affiliate IDs and redirect wrappers are removed as you type.</p>
+            </header>
+            <label className="z-field" htmlFor="dirty-url">
+              <span>Messy link</span>
+              <textarea
+                id="dirty-url"
+                rows={3}
+                className="z-input mono"
+                placeholder="https://twitter.com/user/status/12345?s=20&t=abcdef123&utm_source=share"
+                value={dirtyUrl}
+                onChange={(e) => handleCleanUrl(e.target.value)}
               />
-              <button
-                type="submit"
-                disabled={testingDoh || !dohDomain.trim()}
-                className="shrink-0 rounded-xl border border-[var(--border)] bg-[var(--accent-pink)] px-6 py-3 font-mono text-xs font-bold uppercase tracking-wider text-black shadow-[0_0_15px_var(--bubble-glow-subtle)] transition-all hover:bg-white disabled:opacity-40 cursor-pointer"
-              >
-                {testingDoh ? "Testing DNS..." : "Test DNS"}
+            </label>
+            {cleanedUrl && (
+              <div className="z-box">
+                <div className="z-box-row">
+                  <span className="z-label">
+                    Clean link · {strippedCount} {strippedCount === 1 ? "tracker" : "trackers"} removed
+                  </span>
+                  <button type="button" className="z-btn small" onClick={handleCopyCleaned}>
+                    {copiedCleaner ? "Copied" : "Copy"}
+                  </button>
+                </div>
+                <p className="z-out">{cleanedUrl}</p>
+              </div>
+            )}
+          </section>
+        )}
+
+        {activeTab === "torrent" && (
+          <section className="z-panel" role="tabpanel">
+            <header>
+              <span className="c-no">P2P</span>
+              <h2>Magnet inspector</h2>
+              <p>See a magnet link&apos;s name and hash, then open it in a browser player or a debrid service.</p>
+            </header>
+            <label className="z-field" htmlFor="magnet-input">
+              <span>Magnet link</span>
+              <textarea
+                id="magnet-input"
+                rows={3}
+                className="z-input mono"
+                placeholder="magnet:?xt=urn:btih:d6b6e4d588523c9213...&dn=Sample.Movie.1080p&tr=..."
+                value={magnetInput}
+                onChange={(e) => handleParseMagnet(e.target.value)}
+              />
+            </label>
+            {parsedMagnetInfo && (
+              <div className="z-box">
+                <div className="z-box-row">
+                  <div>
+                    <span className="z-label">Torrent name</span>
+                    <div className="z-value">{parsedMagnetInfo.name}</div>
+                  </div>
+                  <button type="button" className="z-btn ghost small" onClick={handleCopyHash}>
+                    {copiedMagnet
+                      ? "Hash copied"
+                      : parsedMagnetInfo.hash
+                        ? `Copy hash · ${parsedMagnetInfo.hash.slice(0, 8)}…`
+                        : "Copy hash"}
+                  </button>
+                </div>
+                <div className="z-btn-row">
+                  <a
+                    className="z-btn"
+                    href={`https://webtorrent.io/free-torrents#${encodeURIComponent(streamMagnet)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open in WebTorrent ↗
+                  </a>
+                  <a className="z-btn ghost" href="https://real-debrid.com/torrents" target="_blank" rel="noopener noreferrer">
+                    Real-Debrid ↗
+                  </a>
+                  <a className="z-btn ghost" href="https://torbox.app" target="_blank" rel="noopener noreferrer">
+                    TorBox ↗
+                  </a>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {activeTab === "doh" && (
+          <section className="z-panel" role="tabpanel">
+            <header>
+              <span className="c-no">DNS OVER HTTPS</span>
+              <h2>Blocked site check</h2>
+              <p>
+                Find out whether your internet provider is blocking a site by looking it up through Cloudflare, Google,
+                Quad9 and AdGuard.
+              </p>
+            </header>
+            <form onSubmit={handleTestDoh} className="z-inline-form">
+              <label className="z-field" htmlFor="doh-domain">
+                <span>Site address</span>
+                <input
+                  id="doh-domain"
+                  type="text"
+                  className="z-input mono"
+                  placeholder="1337x.to"
+                  value={dohDomain}
+                  onChange={(e) => setDohDomain(e.target.value)}
+                />
+              </label>
+              <button type="submit" className="z-btn" disabled={testingDoh || !dohDomain.trim()}>
+                {testingDoh ? "Checking…" : "Check"}
               </button>
             </form>
 
-            {/* DoH Results Grid */}
             {dohResults && (
-              <div className="space-y-4 text-left">
-                <div className="flex items-center justify-between border-b border-[var(--wired-grid)] pb-3">
+              <div className="z-box">
+                <div className="z-box-row">
                   <div>
-                    <span className="font-mono text-xs text-[var(--text-main)] opacity-60">Domain Tested:</span>
-                    <p className="font-mono text-sm font-bold text-white">{dohResults.domain}</p>
+                    <span className="z-label">Checked</span>
+                    <div className="z-value">{dohResults.domain}</div>
                   </div>
-                  <span
-                    className={`rounded-full px-3 py-1 font-mono text-xs font-bold uppercase ${
-                      dohResults.isDomainActive
-                        ? "bg-green-500/20 text-green-300 border border-green-500/40"
-                        : "bg-red-500/20 text-red-300 border border-red-500/40"
-                    }`}
-                  >
-                    {dohResults.isDomainActive ? "Resolvable Globally" : "Domain Inactive / Dead"}
+                  <span className={`z-badge ${dohResults.isDomainActive ? "good" : "bad"}`}>
+                    {dohResults.isDomainActive ? "Resolves worldwide" : "Not resolving anywhere"}
                   </span>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {dohResults.results.map((r, idx) => (
-                    <div
-                      key={idx}
-                      className="rounded-xl border border-[var(--wired-grid)] bg-black/40 p-3.5 space-y-1.5"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-semibold text-white">
-                          {r.provider}
-                        </span>
-                        <span
-                          className={`font-mono text-[0.65rem] px-2 py-0.5 rounded ${
-                            r.success
-                              ? "bg-green-500/10 text-green-300 border border-green-500/30"
-                              : "bg-red-500/10 text-red-300 border border-red-500/30"
-                          }`}
-                        >
-                          {r.status} ({r.latency})
+                <div className="z-results">
+                  {dohResults.results.map((r) => (
+                    <div key={r.provider}>
+                      <div className="z-box-row">
+                        <b>{r.provider}</b>
+                        <span className={`z-badge ${r.success ? "good" : "bad"}`}>
+                          {r.status} · {r.latency}
                         </span>
                       </div>
-                      <p className="truncate font-mono text-[0.68rem] text-[var(--text-main)] opacity-70">
-                        IPs: {r.ips.join(", ")}
-                      </p>
+                      <code>{r.ips.length ? r.ips.join(", ") : "No addresses"}</code>
                     </div>
                   ))}
                 </div>
-
                 {dohResults.isDomainActive && (
-                  <div className="rounded-xl border border-[var(--border)] bg-[var(--accent-pink)]/10 p-3.5 text-xs text-[var(--foreground)]">
-                    <p className="font-bold text-[var(--accent-pink)] mb-1">[DNS Bypass Tip]:</p>
-                    If this site does not open on your device but shows <span className="text-green-300 font-mono">Resolved</span> above, your ISP is censoring it. Set your router/device DNS to <span className="font-mono text-white">1.1.1.1</span> (Cloudflare) or enable <span className="font-mono text-white">Secure DNS (DoH)</span> in your browser settings to bypass the block instantly.
+                  <div className="z-tip">
+                    <b>If it still won&apos;t open</b>
+                    <span>
+                      Your provider is probably blocking it. Set your device or router DNS to <code>1.1.1.1</code>{" "}
+                      (Cloudflare), or turn on Secure DNS in your browser settings.
+                    </span>
                   </div>
                 )}
               </div>
             )}
-          </div>
+          </section>
         )}
 
-        {/* Back Shortcut */}
-        <div className="flex justify-center pt-2">
-          <Link
-            href="/"
-            className="rounded-xl border border-[var(--border)] bg-black/40 px-6 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-[var(--accent-pink)] shadow-sm transition-all hover:bg-[var(--accent-pink)] hover:text-black no-underline"
-          >
-            ← Return to Hub
-          </Link>
-        </div>
-
+        <Link href="/" className="z-foot-link">
+          ← Contents
+        </Link>
       </div>
-    </div>
+    </main>
   );
 }
