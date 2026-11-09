@@ -5,9 +5,9 @@ import Navbar from "@/components/Navbar";
 import { EDITION_STORAGE_KEY } from "@/lib/edition";
 
 const anton = Anton({ weight: "400", subsets: ["latin"], variable: "--font-anton" });
-const archivo = Archivo({ weight: ["500", "600", "700"], subsets: ["latin"], variable: "--font-archivo" });
-const newsreader = Newsreader({ weight: ["400", "600"], style: ["normal", "italic"], subsets: ["latin"], variable: "--font-newsreader" });
-const jetbrainsMono = JetBrains_Mono({ weight: ["500", "600"], subsets: ["latin"], variable: "--font-jetbrains-mono" });
+const archivo = Archivo({ subsets: ["latin"], variable: "--font-archivo" });
+const newsreader = Newsreader({ style: ["normal", "italic"], subsets: ["latin"], variable: "--font-newsreader" });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono" });
 const notoSerifJp = Noto_Serif_JP({ weight: "900", preload: false, variable: "--font-noto-serif-jp" });
 
 export const metadata: Metadata = {
