@@ -91,3 +91,38 @@ export function removeFavoriteByUrl(url: string) {
   const updated = favs.filter((f) => f.url.toLowerCase() !== url.toLowerCase());
   saveFavorites(updated);
 }
+
+const FAVORITES_EVENT = "wired_favorites_change";
+export const EMPTY_FAVORITES: LinkItem[] = [];
+let snapshotRaw: string | null = null;
+let snapshotValue: LinkItem[] = DEFAULT_FAVORITES;
+
+/** Stable snapshot for useSyncExternalStore: the same array until the stored favorites change. */
+export function getFavoritesSnapshot(): LinkItem[] {
+  let raw: string | null;
+  try {
+    raw = localStorage.getItem(FAVORITES_STORAGE_KEY);
+  } catch {
+    return DEFAULT_FAVORITES;
+  }
+  if (raw === null) return DEFAULT_FAVORITES;
+  if (raw !== snapshotRaw) {
+    snapshotRaw = raw;
+    try {
+      const parsed = JSON.parse(raw);
+      snapshotValue = Array.isArray(parsed) ? parsed : DEFAULT_FAVORITES;
+    } catch {
+      snapshotValue = DEFAULT_FAVORITES;
+    }
+  }
+  return snapshotValue;
+}
+
+export function subscribeFavorites(onChange: () => void): () => void {
+  window.addEventListener(FAVORITES_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(FAVORITES_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}

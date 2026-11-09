@@ -1,398 +1,299 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { categoryLinks, type LinkItem } from "@/lib/links";
-import { getFavorites, addCustomFavorite } from "@/lib/favorites";
-import { useRouter, useParams } from "next/navigation";
-import { createSupabaseClient } from "@/utils/supabase/client";
-import LoadingScreen from "@/components/LoadingScreen";
-import LinkPreviewCard from "@/components/LinkPreviewCard";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { categoryLinks, type LinkItem } from "@/lib/links";
+import {
+  addCustomFavorite,
+  EMPTY_FAVORITES,
+  getFavoritesSnapshot,
+  subscribeFavorites,
+} from "@/lib/favorites";
+import { useAuthGate } from "@/lib/use-auth-gate";
+import LinkRow from "@/components/zine/LinkRow";
+import { useZineFx } from "@/components/zine/useZineFx";
 
-type LinkGroup = { section: string; id: string; links: LinkItem[] };
+const PICKS_PREVIEW = 6;
 
-function sectionId(section: string) {
-  return `section-${section.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "picks"}`;
-}
+type Chapter = { id: string; title: string; label: string; links: LinkItem[]; isPicks: boolean };
 
-function isImageIcon(icon: string | undefined) {
-  const i = icon || "";
-  return i.startsWith("http") || i.startsWith("/");
+function chapterId(title: string) {
+  return `ch-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "picks"}`;
 }
 
 export default function CategoryPage() {
-  const router = useRouter();
-  const rawParams = useParams();
-  const slug = typeof rawParams?.slug === "string" ? rawParams.slug : Array.isArray(rawParams?.slug) ? rawParams.slug[0] : "";
-  const supabase = createSupabaseClient();
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [favoritesList, setFavoritesList] = useState<LinkItem[]>([]);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const params = useParams();
+  const slug = typeof params?.slug === "string" ? params.slug : Array.isArray(params?.slug) ? params.slug[0] : "";
+  const loading = useAuthGate();
+  const favorites = useSyncExternalStore(subscribeFavorites, getFavoritesSnapshot, () => EMPTY_FAVORITES);
+  const [query, setQuery] = useState("");
+  const [picksOpen, setPicksOpen] = useState(false);
+  const [activeId, setActiveId] = useState("");
   const [customName, setCustomName] = useState("");
   const [customUrl, setCustomUrl] = useState("");
+  const chipsRef = useRef<HTMLElement>(null);
 
   const category = slug ? categoryLinks[slug] : undefined;
-  const isFavoritesCategory = slug === "favorites";
-  const allCategoryEntries = Object.entries(categoryLinks);
+  const isFavorites = slug === "favorites";
+  const allLinks = useMemo(
+    () => (isFavorites ? favorites : (category?.links ?? [])),
+    [isFavorites, favorites, category],
+  );
+  const q = query.trim().toLowerCase();
 
-  useEffect(() => {
-    setFavoritesList(getFavorites());
-    const handleFavChange = (e: CustomEvent<LinkItem[]>) => {
-      setFavoritesList(e.detail || getFavorites());
-    };
-    window.addEventListener("wired_favorites_change" as any, handleFavChange);
-
-    const checkUser = async () => {
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-        setLoading(false);
-        return;
+  const chapters = useMemo(() => {
+    const filtered = q
+      ? allLinks.filter((l) =>
+          `${l.name} ${l.description ?? ""} ${l.section ?? ""} ${l.url}`.toLowerCase().includes(q),
+        )
+      : allLinks;
+    const picksTitle = isFavorites ? "Your starred links" : "Editor's Picks";
+    const map = new Map<string, Chapter>();
+    let n = 0;
+    for (const link of filtered) {
+      const title = link.section ?? picksTitle;
+      let chapter = map.get(title);
+      if (!chapter) {
+        const isPicks = !link.section;
+        if (!isPicks) n++;
+        chapter = {
+          id: chapterId(title),
+          title,
+          label: isPicks ? (isFavorites ? "SAVED" : "PICKS") : `CH.${String(n).padStart(2, "0")}`,
+          links: [],
+          isPicks,
+        };
+        map.set(title, chapter);
       }
-      try {
-        const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) =>
-          setTimeout(() => resolve({ data: { session: null } }), 400)
-        );
-        const {
-          data: { session },
-        } = await Promise.race([supabase.auth.getSession(), timeoutPromise]);
-        if (!session && process.env.NEXT_PUBLIC_REQUIRE_AUTH === "true") {
-          router.replace("/login");
-        } else {
-          setLoading(false);
-        }
-      } catch {
-        setLoading(false);
-      }
-    };
-    checkUser();
-
-    return () => {
-      window.removeEventListener("wired_favorites_change" as any, handleFavChange);
-    };
-  }, [router, supabase]);
-
-  const rawLinks = isFavoritesCategory ? favoritesList : category?.links || [];
-
-  const filteredLinks = useMemo(() => {
-    if (!searchQuery.trim()) return rawLinks;
-
-    const query = searchQuery.toLowerCase().trim();
-    return rawLinks.filter(
-      (link) =>
-        link.name.toLowerCase().includes(query) ||
-        link.url.toLowerCase().includes(query) ||
-        link.description?.toLowerCase().includes(query) ||
-        link.section?.toLowerCase().includes(query)
-    );
-  }, [rawLinks, searchQuery]);
-
-  /** Keeps first-seen order, so hand-picked (unsectioned) links lead and FMHY sections follow. */
-  const groups = useMemo(() => {
-    const map = new Map<string, LinkGroup>();
-    for (const link of filteredLinks) {
-      const section = link.section ?? "";
-      let group = map.get(section);
-      if (!group) {
-        group = { section, id: sectionId(section), links: [] };
-        map.set(section, group);
-      }
-      group.links.push(link);
+      chapter.links.push(link);
     }
     return [...map.values()];
-  }, [filteredLinks]);
+  }, [allLinks, q, isFavorites]);
 
-  const showSections = groups.length > 1 || Boolean(groups[0]?.section);
-  const hasFmhyLinks = rawLinks.some((link) => link.section);
+  const totalChapters = useMemo(
+    () => new Set(allLinks.map((l) => l.section ?? "")).size,
+    [allLinks],
+  );
+
+  useZineFx(`${loading}-${slug}-${q}-${picksOpen}-${chapters.length}`);
+
+  // Highlight the chapter being read
+  useEffect(() => {
+    if (loading) return;
+    const spy = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && setActiveId(e.target.id)),
+      { rootMargin: "-35% 0px -60% 0px" },
+    );
+    document.querySelectorAll(".c-ch").forEach((el) => spy.observe(el));
+    return () => spy.disconnect();
+  }, [loading, chapters]);
+
+  // Keep the active chip in view inside the chip bar
+  useEffect(() => {
+    const nav = chipsRef.current;
+    const chip = nav?.querySelector<HTMLElement>(`[data-target="${activeId}"]`);
+    if (!nav || !chip) return;
+    const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    if (nav.scrollWidth > nav.clientWidth) {
+      nav.scrollTo({ left: chip.offsetLeft - nav.clientWidth / 2 + chip.offsetWidth / 2, behavior });
+    } else if (nav.scrollHeight > nav.clientHeight) {
+      nav.scrollTo({ top: chip.offsetTop - nav.clientHeight / 2, behavior });
+    }
+  }, [activeId]);
+
+  const jumpTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({
+      block: "start",
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
+  };
 
   const handleAddCustom = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customUrl.trim()) return;
-
     addCustomFavorite(customName, customUrl);
     setCustomName("");
     setCustomUrl("");
-    setShowAddModal(false);
   };
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <LoadingScreen label="Connecting" />
-      </div>
+      <main className="z-page">
+        <p className="z-loading">
+          Loading<span>_</span>
+        </p>
+      </main>
     );
   }
 
   if (!category) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 text-center">
-        <h1 className="text-2xl font-bold text-[var(--destructive)]">Category Not Found</h1>
-        <p className="font-mono text-xs text-[var(--text-main)] opacity-70">
-          The requested category could not be found.
-        </p>
-        <Link href="/" className="primary-btn px-6 py-2 no-underline">
-          Return to Hub
-        </Link>
-      </div>
+      <main className="z-page">
+        <div className="z-missing z-pad z-wrap">
+          <h1>Page not found</h1>
+          <p>There is no category called “{slug}”.</p>
+          <Link href="/">Back to the contents</Link>
+        </div>
+      </main>
     );
   }
 
+  const order = Object.keys(categoryLinks).filter((s) => s !== "favorites");
+  const nextSlug = order[(order.indexOf(slug) + 1) % order.length];
+  const next = isFavorites ? categoryLinks[order[0]] : categoryLinks[nextSlug];
+  const hasFmhy = allLinks.some((l) => l.section);
+
   return (
-    <div className="relative min-h-screen w-full px-4 pb-28 pt-4 sm:px-8 md:px-12 md:pt-6">
-      {/* Background Soft Glow */}
-      <div
-        className="pointer-events-none absolute left-1/3 top-16 h-80 w-96 rounded-full bg-[var(--accent-pink)] opacity-[0.04] blur-[120px]"
-        aria-hidden
-      />
-
-      <div className="mx-auto max-w-[1360px]">
-        {/* Category Quick Navigation Chips */}
-        <div className="mb-6 flex w-full items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          <Link
-            href="/"
-            className="shrink-0 rounded-full border border-[var(--wired-grid)] bg-black/40 px-3.5 py-1.5 font-mono text-xs font-semibold text-[var(--text-main)] transition-all duration-200 hover:border-[var(--accent-pink)] hover:text-white no-underline"
-          >
-            ← Hub
-          </Link>
-          <div className="h-4 w-px bg-[var(--wired-grid)] shrink-0 mx-1" />
-          {allCategoryEntries.map(([catSlug, catData]) => {
-            const isCurrent = catSlug === slug;
-            const count = catSlug === "favorites" ? favoritesList.length : catData.links.length;
-            return (
-              <Link
-                key={catSlug}
-                href={`/category/${catSlug}`}
-                className={`shrink-0 rounded-full px-3.5 py-1.5 font-mono text-xs font-semibold transition-all duration-200 no-underline ${
-                  isCurrent
-                    ? "border border-[var(--accent-pink)] bg-[var(--accent-pink)]/20 text-[var(--accent-pink)] shadow-[0_0_16px_rgba(255,182,193,0.35)]"
-                    : "border border-[var(--wired-grid)] bg-black/30 text-[var(--text-main)] hover:border-[var(--accent-pink)]/40 hover:text-white"
-                }`}
-              >
-                <span className="font-serif mr-1.5 opacity-70">{catData.kanji}</span>
-                {catData.title}
-                <span className="ml-1.5 rounded-full bg-black/50 px-1.5 py-0.2 font-mono text-[0.62rem] opacity-60">
-                  {count}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Hero Category Header */}
-        <header className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--wired-grid)] pb-6">
-          <div className="flex items-center gap-4 sm:gap-5">
-            <div className="bubble-hero-ring shrink-0 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-black/60 shadow-[0_0_20px_rgba(255,182,193,0.3)]">
-              {isImageIcon(category.icon) ? (
-                <img
-                  src={category.icon}
-                  alt=""
-                  className="h-full w-full rounded-full object-cover"
-                />
-              ) : (
-                <span className="font-serif text-2xl font-bold text-[var(--accent-pink)]">
-                  {category.kanji}
-                </span>
-              )}
-            </div>
-            <div className="min-w-0 text-left">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[0.68rem] uppercase tracking-[0.2em] text-[var(--accent-pink)] opacity-85">
-                  {category.romaji}
-                </span>
-                <span className="text-white/20">·</span>
-                <span className="font-mono text-[0.68rem] text-[var(--text-main)] opacity-60">
-                  {rawLinks.length} links
-                </span>
-              </div>
-              <h1 className="text-2xl font-bold uppercase tracking-wider text-white text-shadow-pink sm:text-3xl md:text-4xl">
-                {category.title}
-              </h1>
-              <p className="mt-0.5 max-w-xl text-xs text-[var(--text-main)] opacity-75">
-                {category.tagline}
-              </p>
-              {hasFmhyLinks && (
-                <p className="mt-1 font-mono text-[0.62rem] text-[var(--text-main)] opacity-50">
-                  Includes starred picks from{" "}
-                  <a
-                    href="https://fmhy.net/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[var(--accent-pink)] hover:underline"
-                  >
-                    FMHY
-                  </a>
-                </p>
-              )}
-            </div>
+    <main className="z-page">
+      <div className="z-wrap">
+        <section className="c-hero">
+          <div className="c-img img" style={{ "--img": `url("${category.icon}")` } as CSSProperties} />
+          <span className="c-kanji" aria-hidden="true">
+            {category.kanji}
+          </span>
+          <div className="c-title">
+            <Link href="/" className="c-back">
+              ← Contents
+            </Link>
+            <span className="c-romaji">{category.romaji}</span>
+            <h1>{category.title}</h1>
+            <p>{category.tagline}</p>
           </div>
+          <dl className="c-stats">
+            <div>
+              <dt>Links</dt>
+              <dd>{allLinks.length}</dd>
+            </div>
+            <div>
+              <dt>Chapters</dt>
+              <dd>{totalChapters}</dd>
+            </div>
+            <div>
+              <dt>Source</dt>
+              <dd>
+                {hasFmhy ? (
+                  <>
+                    <a href="https://fmhy.net/" target="_blank" rel="noopener noreferrer">
+                      FMHY
+                    </a>{" "}
+                    ★ + picks
+                  </>
+                ) : isFavorites ? (
+                  "Saved by you"
+                ) : (
+                  "Hand-picked"
+                )}
+              </dd>
+            </div>
+          </dl>
+        </section>
 
-          {/* Action Header: Add Custom Link Button + Search Input */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {isFavoritesCategory && (
-              <button
-                type="button"
-                onClick={() => setShowAddModal(true)}
-                className="shrink-0 rounded-xl border border-[var(--accent-pink)] bg-[var(--accent-pink)]/20 px-4 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-[var(--accent-pink)] shadow-[0_0_12px_var(--bubble-glow-subtle)] hover:bg-[var(--accent-pink)] hover:text-black transition-all cursor-pointer"
-              >
-                + Add Custom Link
-              </button>
-            )}
-
-            {/* Live Filter / Search Input */}
-            <div className="relative w-full sm:w-64 md:w-72">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--accent-pink)"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="opacity-80"
+        <div className="c-layout">
+          {chapters.length > 1 && (
+            <nav className="c-chips" aria-label="Chapters" ref={chipsRef}>
+              {chapters.map((ch) => (
+                <a
+                  key={ch.id}
+                  href={`#${ch.id}`}
+                  data-target={ch.id}
+                  className={ch.id === activeId ? "on" : undefined}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    jumpTo(ch.id);
+                  }}
                 >
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-              </div>
+                  {ch.title}
+                  <span>{ch.links.length}</span>
+                </a>
+              ))}
+            </nav>
+          )}
+
+          <div className="c-main">
+            <label className="c-search" htmlFor="category-search">
+              <span aria-hidden="true">⌕</span>
               <input
-                type="text"
-                placeholder="Search in category..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-[var(--wired-grid)] bg-black/40 py-2.5 pl-10 pr-9 font-mono text-xs text-white placeholder:text-[var(--text-main)]/40 focus:border-[var(--accent-pink)] focus:bg-black/60 focus:outline-none focus:ring-1 focus:ring-[var(--accent-pink)] transition-all duration-200"
+                id="category-search"
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={`Search ${allLinks.length} links`}
+                autoComplete="off"
               />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 font-mono text-xs text-[var(--text-main)] hover:text-white cursor-pointer"
-                >
-                  ✕
+              {query && (
+                <button type="button" onClick={() => setQuery("")}>
+                  CLEAR
                 </button>
               )}
-            </div>
-          </div>
-        </header>
+            </label>
 
-        {/* Add Custom Link Inline Modal */}
-        {showAddModal && (
-          <div className="mb-8 rounded-2xl border border-[var(--border)] bg-[#0c0a14]/95 p-6 backdrop-blur-xl shadow-2xl text-left">
-            <div className="flex items-center justify-between border-b border-[var(--wired-grid)] pb-3 mb-4">
-              <h3 className="font-mono text-sm font-bold uppercase text-[var(--accent-pink)]">
-                Add Custom Favorite Link
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowAddModal(false)}
-                className="text-white/60 hover:text-white font-mono text-xs cursor-pointer"
-              >
-                ✕ Close
-              </button>
-            </div>
-
-            <form onSubmit={handleAddCustom} className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                placeholder="Site Name (e.g. My Anime Site)..."
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                className="w-full sm:w-1/3 rounded-xl border border-[var(--border)] bg-black/60 px-4 py-2.5 font-mono text-xs text-white placeholder:text-white/30 focus:border-[var(--accent-pink)] focus:outline-none"
-              />
-              <input
-                type="text"
-                placeholder="Website URL (e.g. https://...)..."
-                value={customUrl}
-                onChange={(e) => setCustomUrl(e.target.value)}
-                required
-                className="w-full sm:flex-1 rounded-xl border border-[var(--border)] bg-black/60 px-4 py-2.5 font-mono text-xs text-white placeholder:text-white/30 focus:border-[var(--accent-pink)] focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="rounded-xl border border-[var(--accent-pink)] bg-[var(--accent-pink)] px-6 py-2.5 font-mono text-xs font-bold uppercase text-black hover:bg-white transition-all cursor-pointer shrink-0"
-              >
-                Save Link
-              </button>
-            </form>
-          </div>
-        )}
-
-        {/* Grid of Clean Cards */}
-        {filteredLinks.length > 0 ? (
-          <div className="flex flex-col gap-10">
-            {/* Section Jump Links */}
-            {showSections && groups.length > 1 && (
-              <nav className="-mt-4 flex gap-1.5 overflow-x-auto pb-2 scrollbar-none sm:mt-0 sm:flex-wrap sm:overflow-visible sm:pb-0" aria-label="Sections">
-                {groups.map((group) => (
-                  <a
-                    key={group.id}
-                    href={`#${group.id}`}
-                    className="shrink-0 rounded-full border border-[var(--wired-grid)] bg-black/30 px-2.5 py-1 font-mono text-[0.65rem] text-[var(--text-main)] no-underline transition-colors hover:border-[var(--accent-pink)]/50 hover:text-white"
-                  >
-                    {group.section || "Hand-Picked"}
-                    <span className="ml-1 opacity-50">{group.links.length}</span>
-                  </a>
-                ))}
-              </nav>
+            {isFavorites && (
+              <form className="c-add" onSubmit={handleAddCustom}>
+                <h3>Add your own link</h3>
+                <input
+                  id="custom-name"
+                  type="text"
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  placeholder="Name (optional)"
+                />
+                <input
+                  id="custom-url"
+                  type="text"
+                  inputMode="url"
+                  value={customUrl}
+                  onChange={(e) => setCustomUrl(e.target.value)}
+                  placeholder="Address, e.g. example.com"
+                  required
+                />
+                <button type="submit">Save link</button>
+              </form>
             )}
 
-            {groups.map((group) => (
-              <section key={group.id} id={group.id} className="scroll-mt-24">
-                {showSections && (
-                  <h2 className="mb-3.5 flex items-center gap-2 font-mono text-sm font-bold uppercase tracking-[0.2em] text-[var(--accent-pink)] text-shadow-pink">
-                    {group.section || "Hand-Picked"}
-                    <span className="h-px flex-1 bg-[var(--wired-grid)]" />
-                    <span className="font-normal tracking-normal opacity-50">{group.links.length}</span>
-                  </h2>
-                )}
-                <div className="grid w-full grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-                  {group.links.map((link, index) => (
-                    <LinkPreviewCard
-                      key={`${link.url}-${index}`}
-                      name={link.name}
-                      url={link.url}
-                      description={link.description}
-                      categoryIcon={category.icon}
-                      animationDelay={`${Math.min(index, 20) * 30}ms`}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        ) : (
-          /* Empty Favorites / Search State */
-          <div className="my-14 flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-[var(--wired-grid)] bg-black/20 p-12 text-center">
-            <span className="font-serif text-4xl text-[var(--accent-pink)]">星</span>
-            <p className="font-mono text-xs uppercase tracking-widest text-[var(--accent-pink)]">
-              {isFavoritesCategory ? "No favorites yet" : "No matching links found"}
-            </p>
-            <p className="font-mono text-xs text-[var(--text-main)] opacity-60 max-w-sm">
-              {isFavoritesCategory
-                ? "Click the star (★) on any link card across any category, or add your own custom links using the button above."
-                : `No links matched "${searchQuery}" in this category.`}
-            </p>
-            {isFavoritesCategory ? (
-              <button
-                type="button"
-                onClick={() => setShowAddModal(true)}
-                className="mt-2 rounded-xl border border-[var(--accent-pink)] bg-[var(--accent-pink)]/20 px-5 py-2 font-mono text-xs font-bold uppercase text-[var(--accent-pink)] hover:bg-[var(--accent-pink)] hover:text-black transition-all cursor-pointer"
-              >
-                + Add Your First Link
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="mt-2 rounded-lg border border-[var(--accent-pink)]/40 bg-[var(--accent-pink)]/10 px-4 py-1.5 font-mono text-xs uppercase tracking-wider text-[var(--accent-pink)] transition-all hover:bg-[var(--accent-pink)]/20 cursor-pointer"
-              >
-                Clear Search
-              </button>
+            {chapters.map((ch) => {
+              const collapsed = ch.isPicks && !isFavorites && !q && !picksOpen && ch.links.length > PICKS_PREVIEW;
+              const shown = collapsed ? ch.links.slice(0, PICKS_PREVIEW) : ch.links;
+              return (
+                <section key={ch.id} id={ch.id} className="c-ch reveal">
+                  <header>
+                    <span className="c-no">{ch.label}</span>
+                    <h2>{ch.title}</h2>
+                    <span className="c-count">{ch.links.length}</span>
+                  </header>
+                  <ul className="c-list">
+                    {shown.map((link) => (
+                      <LinkRow key={link.url} link={link} />
+                    ))}
+                  </ul>
+                  {ch.isPicks && !isFavorites && !q && ch.links.length > PICKS_PREVIEW && (
+                    <button type="button" className="c-more" onClick={() => setPicksOpen((open) => !open)}>
+                      {picksOpen ? "Show fewer" : `Show all ${ch.links.length} picks`}
+                    </button>
+                  )}
+                </section>
+              );
+            })}
+
+            {chapters.length === 0 && (
+              <p className="c-empty">
+                {q
+                  ? `Nothing here matches “${query.trim()}”. Try a site name, or press Ctrl+K to search every category.`
+                  : isFavorites
+                    ? "No favorites yet. Tap the ☆ on any link, or add your own above."
+                    : "This category is empty."}
+              </p>
+            )}
+
+            {next && (
+              <Link href={`/category/${isFavorites ? order[0] : nextSlug}`} className="c-next">
+                <small>Next →</small>
+                <b>{next.title}</b>
+              </Link>
             )}
           </div>
-        )}
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

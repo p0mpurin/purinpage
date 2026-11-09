@@ -196,7 +196,7 @@ const baseCategories: Record<string, CategoryData> = {
     },
     comics: {
         title: "Comics",
-        kanji: "🦸",
+        kanji: "劇画",
         romaji: "Comics / Graphic Archives",
         tagline: "Digital comics, public-domain issues & graphic archives",
         icon: "https://i.pinimg.com/736x/a2/f8/bf/a2f8bf57d72adeb1d27cb5a21db7758a.jpg",
@@ -335,7 +335,7 @@ const baseCategories: Record<string, CategoryData> = {
     },
     adblockers: {
         title: "AdBlockers",
-        kanji: "🛡️",
+        kanji: "遮断",
         romaji: "AdBlock / Privacy",
         tagline: "Block intrusive ads, pop-ups & malicious scripts",
         icon: "https://i.pinimg.com/736x/08/5e/78/085e78f4d07b5443fcb74ca318a4674b.jpg",
@@ -350,7 +350,7 @@ const baseCategories: Record<string, CategoryData> = {
     },
     vpn: {
         title: "VPN",
-        kanji: "🔒",
+        kanji: "隧道",
         romaji: "VPN / Private Relay",
         tagline: "Privacy-focused VPN services and secure browsing",
         icon: "https://i.pinimg.com/736x/04/61/fc/0461fc5dae4d7a344541fbd8199f13f8.jpg",
