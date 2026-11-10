@@ -16,7 +16,7 @@ const SearchOverlay = dynamic(() => import("@/components/zine/SearchOverlay"), {
 
 const NAV = [
   { href: "/", label: "Hub", kanji: "目次", match: (p: string) => p === "/" || p.startsWith("/category") },
-  { href: "/watch", label: "Cinema", kanji: "映画館", match: (p: string) => p === "/watch" },
+  { href: "/watch", label: "Cinema", kanji: "映画館", match: (p: string) => p === "/watch" || p.startsWith("/watch/") },
   { href: "/tools", label: "Tools", kanji: "道具", match: (p: string) => p === "/tools" },
   { href: "/dev", label: "Dev", kanji: "開発", match: (p: string) => p === "/dev" || p === "/about" },
 ];
@@ -147,9 +147,9 @@ export default function Navbar() {
         </nav>
       )}
 
-      <p className="z-notice" role="note">
+      {!pathname.startsWith("/watch") && <p className="z-notice" role="note">
         <b>!</b> Use an ad blocker first · AdGuard (Android) · 1Blocker (iOS)
-      </p>
+      </p>}
 
       {searchOpen && <SearchOverlay onClose={closeSearch} />}
     </>

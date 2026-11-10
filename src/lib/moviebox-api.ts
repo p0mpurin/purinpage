@@ -17,6 +17,18 @@ type RawStream = { id: string; format: string; url: string; resolutions: string;
 type RawPlay = { streams?: RawStream[]; hls?: RawStream[]; hasResource?: boolean };
 type RawCaption = { lan: string; lanName: string; url: string };
 
+function qualityRank(stream: RawStream) {
+  const label = stream.resolutions || "";
+  if (/4k/i.test(label)) return 2160;
+  const resolution = Number(label.match(/\d+/)?.[0] || 0);
+  return Number.isFinite(resolution) ? resolution : 0;
+}
+
+function subtitleLanguage(code: string) {
+  if (code.toLowerCase() === "in_id") return "id";
+  return code.replace(/_/g, "-").toLowerCase() || "und";
+}
+
 export type MovieboxItem = { id: string; title: string; slug: string; poster: string | null; kind: "movie" | "series"; description: string | null; country: string | null; genre: string | null; year: string | null };
 export type MovieboxDetail = { item: MovieboxItem; seasons: { number: number; episodes: number }[] };
 export type MovieboxSource = { id: string; label: string; url: string; format: string };
@@ -125,7 +137,7 @@ export async function getMovieboxSources(id: string, slug: string, season: numbe
   const response = await fetch(url, { headers: { "User-Agent": BASE_HEADERS["User-Agent"], Referer: referer, Authorization: `Bearer ${token}` }, cache: "no-store" });
   if (!response.ok) throw new Error(`MovieBox player returned ${response.status}`);
   const result = await response.json() as RawResponse<RawPlay>;
-  const streams = [...(result.data.streams || []), ...(result.data.hls || [])];
+  const streams = [...(result.data.streams || []), ...(result.data.hls || [])].sort((a, b) => qualityRank(b) - qualityRank(a));
   const sources = streams.filter((stream) => stream.url && !stream.vipLocked && /^https:\/\//.test(stream.url))
     .map((stream) => ({ id: stream.id, label: stream.resolutions ? `${stream.resolutions}p` : stream.format,
       url: stream.format.toUpperCase() === "MP4" ? `/api/cinema/moviebox/media?url=${encodeURIComponent(stream.url)}&ref=${encodeURIComponent(domain)}` : stream.url,
@@ -136,7 +148,7 @@ export async function getMovieboxSources(id: string, slug: string, season: numbe
     try {
       const data = await request<{ captions?: RawCaption[] }>(`/subject/caption?format=${encodeURIComponent(first.format)}&id=${encodeURIComponent(first.id)}&subjectId=${id}&detailPath=${encodeURIComponent(slug)}`);
       subtitles = (data.captions || []).filter((caption) => caption.url && /^https:\/\//.test(caption.url)).map((caption) => ({
-        label: caption.lanName || caption.lan, language: caption.lan || "und",
+        label: caption.lanName || caption.lan, language: subtitleLanguage(caption.lan),
         url: `/api/cinema/moviebox/subtitle?url=${encodeURIComponent(caption.url)}`,
       })).sort((a, b) => Number(b.language === "en") - Number(a.language === "en"));
     } catch { /* The video can still play without captions. */ }

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import PageHead from "@/components/zine/PageHead";
 import CinemaVideo from "@/components/cinema/CinemaVideo";
 import type { MovieboxDetail, MovieboxSource, MovieboxSubtitle } from "@/lib/moviebox-api";
 
@@ -44,12 +43,14 @@ export default function TitleWatchPage() {
     return () => controller.abort();
   }, [id, slug, detail, season, episode]);
 
-  function select(nextSeason: number, nextEpisode: number) { setSeason(nextSeason); setEpisode(nextEpisode); setSources([]); setSourceError(""); setSourceLoading(true); }
+  function select(nextSeason: number, nextEpisode: number) { if (nextSeason === season && nextEpisode === episode) return; setSeason(nextSeason); setEpisode(nextEpisode); setSources([]); setSourceError(""); setSourceLoading(true); }
   const source = sources[sourceIndex];
   const seasonInfo = detail?.seasons.find((item) => item.number === season);
+  const category = params.get("category");
+  const section = category === "anime" ? "Anime" : category === "drama" ? "Asian drama" : detail?.item.kind === "movie" ? "Movie" : "Series";
 
-  return <main className="z-page"><div className="z-wrap z-pad">
-    <PageHead kanji="映像" romaji="Cinema / Watch" title={detail?.item.title || "Cinema"} deck={detail?.item.kind === "movie" ? [detail.item.year, detail.item.genre].filter(Boolean).join(" · ") : `Season ${season} · Episode ${episode}`} />
+  return <main className="z-page c-watch-page"><div className="z-wrap z-pad">
+    <header className="c-watch-header"><Link href="/watch" className="c-back">← Browse Cinema</Link><span className="c-eyebrow">Now watching · {section}</span><h1>{detail?.item.title || "Loading title…"}</h1><div className="c-watch-meta">{detail?.item.year && <span>{detail.item.year}</span>}{detail?.item.country && <span>{detail.item.country}</span>}{detail?.item.genre && <span>{detail.item.genre.split(",").slice(0, 2).join(" · ")}</span>}{detail?.item.kind === "series" && <span>Season {season} · Episode {episode}</span>}</div></header>
     <div className="c-watch-layout">
       <section className="c-watch-main" aria-label="Cinema player">
         {loading && <div className="c-player-placeholder">Loading title…</div>}
@@ -58,16 +59,14 @@ export default function TitleWatchPage() {
         {sourceError && <p role="alert" className="z-msg bad">{sourceError}</p>}
         {!loading && !sourceLoading && !source && !sourceError && <div className="c-player-placeholder">No playable video is available for this title.</div>}
         {source && <CinemaVideo key={source.url} url={source.url} subtitles={subtitles} />}
-        {sources.length > 1 && <div className="c-servers"><span className="z-label">Video quality</span><div className="z-btn-row">{sources.map((item, index) => <button key={`${item.id}-${index}`} className={`z-btn small ${sourceIndex === index ? "" : "ghost"}`} onClick={() => setSourceIndex(index)}>{item.label}</button>)}</div></div>}
-        {detail?.item.description && <p className="c-synopsis">{detail.item.description}</p>}
+        {sources.length > 0 && <div className="c-quality-bar"><div><span className="c-eyebrow">Playback quality</span><strong>{source?.label || "Auto"} <small>{sourceIndex === 0 ? "Best available" : ""}</small></strong></div>{sources.length > 1 && <div className="c-quality-options" role="group" aria-label="Video quality">{sources.map((item, index) => <button key={`${item.id}-${index}`} type="button" aria-pressed={sourceIndex === index} onClick={() => setSourceIndex(index)}>{item.label}</button>)}</div>}</div>}
+        {detail?.item.description && <details className="c-synopsis"><summary>About this title</summary><p>{detail.item.description}</p></details>}
       </section>
       {detail?.item.kind === "series" && <aside className="c-watch-side" aria-label="Episodes">
-        <h2>Episodes</h2>
-        {detail.seasons.length > 1 && <label className="z-field"><span>Season</span><select className="z-input" value={season} onChange={(event) => select(Number(event.target.value), 1)}>{detail.seasons.map((item) => <option key={item.number} value={item.number}>Season {item.number}</option>)}</select></label>}
-        <div className="c-pagination"><button className="z-btn ghost small" disabled={episode <= 1} onClick={() => select(season, episode - 1)}>Previous</button><span>{episode} / {seasonInfo?.episodes || "?"}</span><button className="z-btn ghost small" disabled={!seasonInfo || episode >= seasonInfo.episodes} onClick={() => select(season, episode + 1)}>Next</button></div>
-        <div className="c-episode-buttons">{Array.from({ length: seasonInfo?.episodes || 0 }, (_, index) => index + 1).map((number) => <button key={number} className={number === episode ? "active" : ""} onClick={() => select(season, number)}><b>{number}</b><span>Episode {number}</span></button>)}</div>
+        <div className="c-episodes-head"><div><span className="c-eyebrow">Keep watching</span><h2>Episodes</h2></div>{detail.seasons.length > 1 && <label className="c-season-select"><span className="c-visually-hidden">Season</span><select value={season} onChange={(event) => select(Number(event.target.value), 1)}>{detail.seasons.map((item) => <option key={item.number} value={item.number}>Season {item.number}</option>)}</select></label>}</div>
+        <div className="c-episode-navigation"><button disabled={episode <= 1} onClick={() => select(season, episode - 1)}>← Prev</button><span>{episode} / {seasonInfo?.episodes || "?"}</span><button disabled={!seasonInfo || episode >= seasonInfo.episodes} onClick={() => select(season, episode + 1)}>Next →</button></div>
+        <div className="c-episode-buttons">{Array.from({ length: seasonInfo?.episodes || 0 }, (_, index) => index + 1).map((number) => <button key={number} className={number === episode ? "active" : ""} aria-current={number === episode ? "true" : undefined} onClick={() => select(season, number)}><b>{String(number).padStart(2, "0")}</b><span>Episode {number}</span>{number === episode && <em>Playing</em>}</button>)}</div>
       </aside>}
     </div>
-    <Link href="/watch" className="z-foot-link">← Cinema</Link>
   </div></main>;
 }
