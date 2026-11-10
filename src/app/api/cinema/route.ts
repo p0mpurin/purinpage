@@ -27,17 +27,16 @@ export async function GET(request: Request) {
           kind: "movie", poster: archive.getThumbnailUrl(item.identifier), year: item.year || null,
           url: archive.getDetailsUrl(item.identifier), description: item.description || null, blocked: false,
         })),
-        more: page * 24 < data.response.numFound, weekly: [],
+        more: page * 24 < data.response.numFound,
       });
     }
     if (category !== "anime" && category !== "movies" && category !== "drama") return NextResponse.json({ error: "Invalid category" }, { status: 400 });
     const data = await browseMoviebox(category, query, page, sort);
-    const mapItem = (item: typeof data.items[number]) => ({
+    return NextResponse.json({ items: data.items.map((item) => ({
       id: `moviebox:${item.id}`, source: "MovieBox", title: item.title, slug: item.slug,
       kind: item.kind, poster: item.poster, year: item.year, rating: item.rating, url: null,
       description: item.description, blocked: false,
-    });
-    return NextResponse.json({ items: data.items.map(mapItem), more: data.more, weekly: !query && page === 1 ? data.weekly.map(mapItem) : [] });
+    })), more: data.more });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Source unavailable" }, { status: 502 });
   }

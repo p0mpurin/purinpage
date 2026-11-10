@@ -92,19 +92,6 @@ export default function HomeClient({ categories }: { categories: CategorySummary
           </div>
         </div>
 
-        {freshLinks.length > 0 && (
-          <section className="z-fresh z-pad reveal">
-            <h2 className="z-h">
-              <span>新着</span>New this week<small>{freshLinks.length} added</small>
-            </h2>
-            <ul className="c-list">
-              {freshLinks.map((link) => (
-                <LinkRow key={link.url} link={link} from={link.category} />
-              ))}
-            </ul>
-          </section>
-        )}
-
         <section className="z-feat">
           <h2 className="z-h z-pad">
             <span>特集</span>In this issue
@@ -152,6 +139,19 @@ export default function HomeClient({ categories }: { categories: CategorySummary
             ))}
           </ol>
         </section>
+
+        {freshLinks.length > 0 && (
+          <section className="z-fresh z-pad reveal">
+            <h2 className="z-h">
+              <span>新着</span>New this week<small>{freshLinks.length} added</small>
+            </h2>
+            <ul className="c-list">
+              {freshLinks.map((link) => (
+                <LinkRow key={link.url} link={link} from={link.category} />
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
 
       <footer className="z-colo z-pad">
