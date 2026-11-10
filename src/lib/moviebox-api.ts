@@ -109,7 +109,7 @@ export async function browseMoviebox(category: "anime" | "movies" | "drama", que
     const raw = data.items || data.list || [];
     const items = raw.map(mapItem).filter((item): item is MovieboxItem => Boolean(item)).filter((item) => inCategory(item, category));
     const total = data.pager?.totalCount || 0;
-    return { items, more: raw.length >= 30 && (total >= 1_000_000 || page * 30 < total) };
+    return { items, more: raw.length >= 30 && (total >= 1_000_000 || page * 30 < total), weekly: [] as MovieboxItem[] };
   }
   const home = await request<RawHome>("/home");
   const patterns = category === "anime" ? /anime/i : category === "movies" ? /movie|cinema|action|horror|comedy/i : /k-drama|c-drama|drama|bl story/i;
@@ -135,7 +135,12 @@ export async function browseMoviebox(category: "anime" | "movies" | "drama", que
   }
   const start = (page - 1) * 24;
   const ordered = sortItems(items, sort);
-  return { items: ordered.slice(start, start + 24), more: start + 24 < ordered.length };
+  const weekAgo = Date.now() - 7 * 86_400_000;
+  const weekly = items.filter((item) => {
+    const released = Date.parse(item.releaseDate || "");
+    return Number.isFinite(released) && released >= weekAgo && released <= Date.now();
+  }).sort((a, b) => (b.releaseDate || "").localeCompare(a.releaseDate || "") || b.votes - a.votes).slice(0, 6);
+  return { items: ordered.slice(start, start + 24), more: start + 24 < ordered.length, weekly };
 }
 
 export async function getMovieboxDetail(slug: string): Promise<MovieboxDetail> {

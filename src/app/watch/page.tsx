@@ -28,6 +28,13 @@ function titleHref(item: CinemaItem, category: Category) {
   return `/watch/title/${encodeURIComponent(item.id.slice(9))}?slug=${encodeURIComponent(item.slug || "")}&category=${category}`;
 }
 
+function CinemaCard({ item, category }: { item: CinemaItem; category: Category }) {
+  return <Link className="c-card" href={titleHref(item, category)}>
+    <span className="c-poster">{item.poster ? <Image src={item.poster} alt="" fill sizes="(min-width: 900px) 16vw, 45vw" unoptimized /> : <span>No poster</span>}<span className="c-card-play" aria-hidden="true">▶</span></span>
+    <strong>{item.title}</strong><small>{item.year || (item.kind === "movie" ? "Film" : "Series")}{item.rating ? ` · ★ ${item.rating.toFixed(1)}` : ""}</small>
+  </Link>;
+}
+
 export default function WatchPage() {
   const [category, setCategory] = useState<Category>("anime");
   const [searchInput, setSearchInput] = useState("");
@@ -35,6 +42,7 @@ export default function WatchPage() {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<CinemaSort>("hot");
   const [items, setItems] = useState<CinemaItem[]>([]);
+  const [weekly, setWeekly] = useState<CinemaItem[]>([]);
   const [more, setMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -48,6 +56,7 @@ export default function WatchPage() {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Catalog unavailable");
         setItems(data.items || []);
+        setWeekly(data.weekly || []);
         setMore(Boolean(data.more));
       })
       .catch((cause) => { if (cause.name !== "AbortError") setError(cause.message); })
@@ -55,7 +64,7 @@ export default function WatchPage() {
     return () => controller.abort();
   }, [category, page, query, sort]);
 
-  function startLoading() { setLoading(true); setError(""); setItems([]); }
+  function startLoading() { setLoading(true); setError(""); setItems([]); setWeekly([]); }
   function changeCategory(next: Category) { if (next === category) return; startLoading(); setCategory(next); setSort(next === "classics" ? "popular" : "hot"); setQuery(""); setSearchInput(""); setPage(1); }
   function changeSort(next: CinemaSort) { if (next === sort) return; startLoading(); setSort(next); setPage(1); }
   function changePage(next: number) { startLoading(); setPage(next); window.scrollTo({ top: 0, behavior: "smooth" }); }
@@ -85,11 +94,9 @@ export default function WatchPage() {
       <div className="c-results-head"><div><span className="c-eyebrow">Browse the library</span><h2>{query ? `Search: ${query}` : tabs.find((tab) => tab.id === category)?.name}</h2></div><span>{loading ? "Loading…" : `${items.length} titles on this page`}</span></div>
       {error && <p role="alert" className="c-cinema-error">{error}</p>}
       {!loading && !error && !items.length && <p className="c-empty">No titles found. Try another search.</p>}
-      {loading ? <div className="c-grid" aria-label="Loading titles">{Array.from({ length: 12 }, (_, index) => <div key={index} className="c-card-skeleton" />)}</div> : <div className="c-grid">{gridItems.map((item) => <Link className="c-card" key={item.id} href={titleHref(item, category)}>
-        <span className="c-poster">{item.poster ? <Image src={item.poster} alt="" fill sizes="(min-width: 900px) 16vw, 45vw" unoptimized /> : <span>No poster</span>}<span className="c-card-play" aria-hidden="true">▶</span></span>
-        <strong>{item.title}</strong><small>{item.year || (item.kind === "movie" ? "Film" : "Series")}{item.rating ? ` · ★ ${item.rating.toFixed(1)}` : ""}</small>
-      </Link>)}</div>}
+      {loading ? <div className="c-grid" aria-label="Loading titles">{Array.from({ length: 12 }, (_, index) => <div key={index} className="c-card-skeleton" />)}</div> : <div className="c-grid">{gridItems.map((item) => <CinemaCard key={item.id} item={item} category={category} />)}</div>}
       {!loading && (page > 1 || more) && <div className="c-pagination"><button className="z-btn ghost small" disabled={page <= 1} onClick={() => changePage(page - 1)}>← Previous</button><span>Page {page}</span><button className="z-btn ghost small" disabled={!more} onClick={() => changePage(page + 1)}>Next →</button></div>}
+      {!loading && !error && !query && page === 1 && category !== "classics" && <section className="c-weekly" aria-labelledby="c-weekly-title"><div className="c-weekly-head"><div><span className="c-eyebrow">Fresh from the catalog</span><h2 id="c-weekly-title">New this week</h2><p>Released in the last seven days.</p></div>{weekly.length > 0 && <span>{weekly.length} new {weekly.length === 1 ? "title" : "titles"}</span>}</div>{weekly.length ? <div className="c-grid">{weekly.map((item) => <CinemaCard key={item.id} item={item} category={category} />)}</div> : <div className="c-weekly-empty"><p>No {category === "anime" ? "anime" : category === "drama" ? "dramas" : "movies"} in this catalog have a release date from the last seven days.</p><button type="button" onClick={() => { changeSort("newest"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Browse new arrivals ↑</button></div>}</section>}
     </section>
     <Link href="/" className="z-foot-link">← Back to hub</Link>
   </div></main>;
