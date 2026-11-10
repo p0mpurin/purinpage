@@ -685,7 +685,46 @@ textarea.z-input { resize: vertical; border: 2px solid var(--ink); padding: 10px
 .z-foot-link { display: inline-block; margin-block: 34px 48px; font: 600 11px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; color: var(--ink2); }
 .z-foot-link:hover { color: var(--hot); }
 
-/* Cinema: under construction */
+/* Cinema */
+.c-cinema { padding-block: 28px 10px; }
+.c-source { border-top: 3px solid var(--ink); padding: 18px 0 24px; }
+.c-source h2 { margin: 8px 0; font: 400 clamp(34px, 7vw, 60px)/.95 var(--display); text-transform: uppercase; }
+.c-source p { margin: 0; font: 16px/1.45 var(--serif); color: var(--ink2); }
+.c-search { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; padding: 10px 0; }
+.c-search .z-field { flex: 1 1 240px; }
+.c-results-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 26px 0 14px; }
+.c-results-head h3 { margin: 0; font: 400 30px/1 var(--display); text-transform: uppercase; }
+.c-results-head span, .c-pagination { font: 600 11px var(--mono); color: var(--ink2); }
+.c-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 20px 14px; }
+.c-card { min-width: 0; color: var(--ink); text-decoration: none; display: grid; align-content: start; gap: 5px; }
+.c-card:hover strong { color: var(--hot); }
+.c-card[aria-disabled="true"] { cursor: default; }
+.c-poster { position: relative; aspect-ratio: 2/3; display: grid; place-items: center; overflow: hidden; background: var(--chip); border: 1px solid var(--rule); font: 11px var(--mono); color: var(--ink2); }
+.c-poster img { width: 100%; height: 100%; object-fit: cover; transition: scale .2s; }
+.c-card:hover .c-poster img { scale: 1.04; }
+.c-card strong { font: 700 14px/1.25 var(--sans); }
+.c-card small { font: 10px/1.35 var(--mono); color: var(--ink2); }
+.c-pagination { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 28px 0; }
+.c-empty { padding: 28px 0; font: italic 17px var(--serif); }
+.c-watch-layout { display: grid; gap: 30px; padding-top: 28px; }
+.c-watch-main { min-width: 0; display: grid; align-content: start; gap: 20px; }
+.c-film-watch { display: grid; gap: 22px; padding-top: 28px; max-width: 980px; }
+.c-player-wrap { display: grid; gap: 10px; }
+.c-player, .c-player-placeholder { width: 100%; aspect-ratio: 16/9; background: #000; border: 2px solid var(--ink); }
+.c-player-placeholder { display: grid; place-items: center; color: #eee; font: 13px var(--mono); }
+.c-servers { display: grid; gap: 12px; }
+.c-servers .z-btn-row { max-height: 150px; overflow: auto; }
+.c-synopsis { white-space: pre-line; font: 16px/1.55 var(--serif); color: var(--ink2); max-width: 75ch; }
+.c-watch-side { border-top: 2px solid var(--ink); padding-top: 18px; min-width: 0; }
+.c-watch-side h2 { margin: 0 0 18px; font: 400 32px var(--display); text-transform: uppercase; }
+.c-jump { display: flex; align-items: end; gap: 10px; }
+.c-jump .z-field { flex: 1; }
+.c-episode-buttons { display: grid; max-height: 440px; overflow: auto; border-top: 1px solid var(--rule); }
+.c-episode-buttons button { display: flex; gap: 12px; align-items: center; width: 100%; padding: 11px 4px; text-align: left; background: transparent; color: var(--ink); border: 0; border-bottom: 1px solid var(--rule); cursor: pointer; font: 12px/1.3 var(--sans); }
+.c-episode-buttons button:hover, .c-episode-buttons button.active { color: var(--hot); }
+.c-episode-buttons b { font: 600 12px var(--mono); min-width: 26px; }
+@media (min-width: 900px) { .c-watch-layout { grid-template-columns: minmax(0, 1fr) 290px; } }
+@media (min-width: 900px) { .c-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 .z-soon { display: grid; gap: 22px; padding-block: 30px 10px; }
 .z-stamp {
   justify-self: start;

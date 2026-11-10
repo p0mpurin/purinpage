@@ -1,0 +1,17 @@
+{
+  "name": "miruro-api-client",
+  "version": "1.0.0",
+  "description": "TypeScript client for Miruro anime streaming API",
+  "type": "module",
+  "main": "api_client.ts",
+  "scripts": {
+    "start": "npx tsx api_client.ts",
+    "dev": "npx tsx --watch api_client.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "tsx": "^4.7.0",
+    "@types/node": "^20.11.0"
+  }
+}
