@@ -114,7 +114,6 @@ async function getPlayerDomain() {
   return url.origin;
 }
 
-export async function getMovieboxPlayerReferer() { return `${await getPlayerDomain()}/`; }
 
 export async function getMovieboxSources(id: string, slug: string, season: number, episode: number) {
   const domain = await getPlayerDomain();
@@ -127,7 +126,7 @@ export async function getMovieboxSources(id: string, slug: string, season: numbe
   const streams = [...(result.data.streams || []), ...(result.data.hls || [])];
   const sources = streams.filter((stream) => stream.url && !stream.vipLocked && /^https:\/\//.test(stream.url))
     .map((stream) => ({ id: stream.id, label: stream.resolutions ? `${stream.resolutions}p` : stream.format,
-      url: stream.format.toUpperCase() === "MP4" ? `/api/cinema/moviebox/media?url=${encodeURIComponent(stream.url)}` : stream.url,
+      url: stream.format.toUpperCase() === "MP4" ? `/api/cinema/moviebox/media?url=${encodeURIComponent(stream.url)}&ref=${encodeURIComponent(domain)}` : stream.url,
       format: stream.format }));
   const first = streams[0];
   let subtitles: MovieboxSubtitle[] = [];

@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
-import { getMovieboxPlayerReferer } from "@/lib/moviebox-api";
 
 const CHUNK_SIZE = 1_048_576;
 
 export async function GET(request: Request) {
   try {
     const raw = new URL(request.url).searchParams.get("url") || "";
+    const ref = new URL(request.url).searchParams.get("ref") || "";
     const url = new URL(raw);
+    const referer = new URL(ref);
     if (url.protocol !== "https:" || !url.hostname.endsWith(".hakunaymatata.com") || !/\.mp4$/.test(url.pathname)) {
       return NextResponse.json({ error: "Invalid video URL" }, { status: 400 });
     }
+    if (referer.protocol !== "https:" || referer.hostname.length > 100) return NextResponse.json({ error: "Invalid player referrer" }, { status: 400 });
     const range = request.headers.get("range");
     const match = range?.match(/^bytes=(\d+)-(\d*)$/);
     if (range && !match) return NextResponse.json({ error: "Invalid video range" }, { status: 416 });
@@ -19,10 +21,10 @@ export async function GET(request: Request) {
     const end = Math.min(requestedEnd, start + CHUNK_SIZE - 1);
     if (!Number.isSafeInteger(end) || end < start) return NextResponse.json({ error: "Invalid video range" }, { status: 416 });
     const response = await fetch(url, {
-      headers: { Referer: await getMovieboxPlayerReferer(), "User-Agent": "Mozilla/5.0", Range: `bytes=${start}-${end}` },
+      headers: { Referer: `${referer.origin}/`, Origin: referer.origin, "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36", Range: `bytes=${start}-${end}` },
       cache: "no-store",
     });
-    if (response.status !== 206 || !response.body) return NextResponse.json({ error: `Video returned ${response.status}` }, { status: 502 });
+    if (response.status !== 206 || !response.body) return NextResponse.json({ error: `Video returned ${response.status}`, detail: (await response.text()).slice(0, 160) }, { status: 502 });
     const contentRange = response.headers.get("content-range");
     if (!contentRange) return NextResponse.json({ error: "Video range unavailable" }, { status: 502 });
     const headers = new Headers({ "Content-Type": response.headers.get("content-type") || "video/mp4", "Content-Range": contentRange,
