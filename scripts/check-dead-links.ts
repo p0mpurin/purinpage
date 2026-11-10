@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { categoryLinks } from "../src/lib/links";
 
 const TIMEOUT_MS = 22_000;
-const CONCURRENCY = 6;
+const CONCURRENCY = 16;
 const SAMPLE_MAX_BYTES = 16_384;
 const RETRY_DELAY_MS = 2_500;
 
@@ -153,7 +153,54 @@ function classify(status: number, err?: string): UrlOutcome {
   return { kind: "uncertain", reason: `HTTP ${status}`, status };
 }
 
+/**
+ * A local DNS failure can just be an internet provider blocking the domain.
+ * Ask two public resolvers over HTTPS: the domain only counts as gone if neither knows it.
+ */
+async function resolvesPublicly(host: string): Promise<boolean> {
+  const resolvers = [
+    `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(host)}&type=A`,
+    `https://dns.google/resolve?name=${encodeURIComponent(host)}&type=A`,
+  ];
+  let answered = false;
+  for (const resolver of resolvers) {
+    try {
+      const res = await fetch(resolver, {
+        headers: { Accept: "application/dns-json" },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) continue;
+      const data = (await res.json()) as { Status?: number; Answer?: unknown[] };
+      answered = true;
+      if (Array.isArray(data.Answer) && data.Answer.length > 0) return true;
+    } catch {
+      /* try the next resolver */
+    }
+  }
+  // If no resolver could be reached at all, don't claim the domain is dead.
+  return !answered;
+}
+
 async function checkOneUrl(url: string): Promise<UrlOutcome> {
+  let host = "";
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    /* handled by the probe */
+  }
+  // Tor addresses never resolve on the normal web, so they can't be judged from here.
+  if (host.endsWith(".onion")) {
+    return { kind: "uncertain", reason: "onion address (not checkable)", status: -1 };
+  }
+
+  const first = await checkOnce(url);
+  if (first.reason === "dns_failure" && host && (await resolvesPublicly(host))) {
+    return { kind: "uncertain", reason: "resolves publicly but not from this network (likely blocked)", status: -1 };
+  }
+  return first;
+}
+
+async function checkOnce(url: string): Promise<UrlOutcome> {
   let p = await probe(url);
   let outcome = classify(p.status, p.err);
 
@@ -242,6 +289,26 @@ async function run(): Promise<void> {
       console.log(`  ${u.url}`);
       console.log(`  → ${u.reason}\n`);
     }
+  }
+
+  // Health file read by the site: only high-confidence results get a dot.
+  // Timeouts and TLS hiccups are too flaky (especially from CI) to call a site dead.
+  const confident = (reason: string) =>
+    reason === "dns_failure" || reason === "connection_refused" || reason === "HTTP 404" || reason === "HTTP 410";
+  const deadUrls = new Set<string>();
+  const unsureUrls = new Set<string>();
+  for (const [url, o] of byUrl) {
+    if (o.kind === "dead" && confident(o.reason)) deadUrls.add(url);
+    else if (o.kind !== "ok") unsureUrls.add(url);
+  }
+  if (process.argv.includes("--write-health")) {
+    const healthPath = join(process.cwd(), "src", "lib", "link-health.json");
+    writeFileSync(
+      healthPath,
+      JSON.stringify({ checkedAt: new Date().toISOString(), dead: [...deadUrls].sort(), unsure: [...unsureUrls].sort() }, null, 1),
+      "utf-8"
+    );
+    console.log(`Wrote ${healthPath} (${deadUrls.size} dead, ${unsureUrls.size} unsure)`);
   }
 
   if (jsonMode) {

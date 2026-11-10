@@ -488,6 +488,43 @@ html[data-edition="night"] { color-scheme: dark; }
   .c-ch { scroll-margin-top: calc(var(--topbar-h) + 16px); }
 }
 
+/* ---------------- Link health, fresh links, page turns ---------------- */
+.h-dot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; vertical-align: 1px; }
+.h-dot.ok { background: var(--good); }
+.h-dot.dead { background: var(--bad); }
+.h-down { color: var(--bad); }
+.c-item.down .c-body b,
+.c-item.down .c-body em { opacity: 0.5; }
+.c-item.down .c-body b { text-decoration: line-through; }
+
+.z-cover-img { display: block; }
+.z-cover-img .img { position: absolute; inset: 0; }
+
+.z-fresh { padding-block: 0 30px; }
+
+.c-turn { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 40px; border-top: 2px solid var(--ink); }
+.c-turn .c-next { margin-top: 0; border-top: 0; text-align: right; }
+.c-turn .c-next.prev { text-align: left; }
+.c-turn .c-next b { font-size: clamp(22px, 5.5vw, 34px); overflow-wrap: anywhere; }
+.c-turn .c-next.prev:hover b { translate: -8px 0; }
+
+/* Page changes: the tapped photo grows into the next header; next / prev turn the page sideways */
+.z-bar { view-transition-name: bar; }
+.c-img { view-transition-name: hero; }
+html[data-vt="next"] .c-img,
+html[data-vt="prev"] .c-img { view-transition-name: none; }
+::view-transition-group(hero) { animation-duration: 0.55s; animation-timing-function: cubic-bezier(0.7, 0, 0.2, 1); }
+::view-transition-old(root),
+::view-transition-new(root) { animation-duration: 0.35s; }
+html[data-vt="next"]::view-transition-old(root) { animation: vt-out-left 0.42s cubic-bezier(0.7, 0, 0.2, 1) both; }
+html[data-vt="next"]::view-transition-new(root) { animation: vt-in-right 0.42s cubic-bezier(0.7, 0, 0.2, 1) both; }
+html[data-vt="prev"]::view-transition-old(root) { animation: vt-out-right 0.42s cubic-bezier(0.7, 0, 0.2, 1) both; }
+html[data-vt="prev"]::view-transition-new(root) { animation: vt-in-left 0.42s cubic-bezier(0.7, 0, 0.2, 1) both; }
+@keyframes vt-out-left { to { transform: translateX(-28%); opacity: 0; } }
+@keyframes vt-in-right { from { transform: translateX(100%); } }
+@keyframes vt-out-right { to { transform: translateX(28%); opacity: 0; } }
+@keyframes vt-in-left { from { transform: translateX(-100%); } }
+
 /* ================= Shared page parts (Tools, Cinema, Dev, Profile, Login, 404) ================= */
 :root { --good: #17804a; --bad: #c8243c; }
 html[data-edition="night"] { --good: #5fd49a; --bad: #ff6b7d; }

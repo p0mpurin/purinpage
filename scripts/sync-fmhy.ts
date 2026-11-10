@@ -8,11 +8,15 @@
  * Offline / local copy:     npm run sync-fmhy -- --from path/to/docs
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const RAW_BASE = "https://raw.githubusercontent.com/fmhy/edit/main/docs";
 const OUT_FILE = join(__dirname, "..", "src", "lib", "fmhy-links.ts");
+const NEW_FILE = join(__dirname, "..", "src", "lib", "fmhy-new.json");
+const CATEGORY_FILE = join(__dirname, "..", "src", "lib", "links.ts");
+/** How many freshly added links the home page shows. */
+const MAX_NEW = 24;
 
 /** Processing order also decides section order inside categories fed by several pages. */
 const PAGES = [
@@ -134,7 +138,8 @@ function parseEntry(line: string): { name: string; url: string; description?: st
   if (!m) return null;
   const [, rawName, url, tail] = m;
   if (!isUsableUrl(url)) return null;
-  const name = rawName.replace(/[.\s]+$/, "").trim();
+  // FMHY's source sometimes carries invisible joiner characters inside names.
+  const name = rawName.replace(/[\u200B-\u200D\u2060\uFEFF]/g, "").replace(/[.\s]+$/, "").trim();
   if (!name) return null;
   const dash = tail.indexOf(" - ");
   return { name, url, description: dash >= 0 ? cleanDescription(tail.slice(dash + 3)) : undefined };
@@ -154,6 +159,14 @@ async function loadPage(page: string, fromDir: string | null): Promise<string> {
   const res = await fetch(`${RAW_BASE}/${page}.md`);
   if (!res.ok) throw new Error(`Failed to fetch ${page}.md: HTTP ${res.status}`);
   return res.text();
+}
+
+/** slug -> display title, read straight from links.ts so this script has no import cycle with its own output. */
+function categoryTitles(): Map<string, string> {
+  const source = readFileSync(CATEGORY_FILE, "utf8");
+  const titles = new Map<string, string>();
+  for (const m of source.matchAll(/^    "?([\w-]+)"?: \{\s+title: "([^"]+)"/gm)) titles.set(m[1], m[2]);
+  return titles;
 }
 
 async function main() {
@@ -195,6 +208,34 @@ async function main() {
       const list = bySlug.get(slug) ?? [];
       bySlug.set(slug, list);
       list.push({ ...entry, section: h2 || h1 });
+    }
+  }
+
+  // Links FMHY starred since the last sync feed the home page's "New this week".
+  const previous = existsSync(OUT_FILE) ? readFileSync(OUT_FILE, "utf8") : "";
+  const knownUrls = new Set([...previous.matchAll(/url: "([^"]+)"/g)].map((m) => m[1]));
+  if (knownUrls.size > 0) {
+    const titles = categoryTitles();
+    type Added = { name: string; url: string; description?: string; category: string };
+    const perCategory: Added[][] = [];
+    let total = 0;
+    for (const [slug, entries] of bySlug) {
+      const fresh = entries
+        .filter((e) => !knownUrls.has(e.url))
+        .map((e) => ({ name: e.name, url: e.url, description: e.description, category: titles.get(slug) ?? slug }));
+      if (fresh.length > 0) perCategory.push(fresh);
+      total += fresh.length;
+    }
+    // Deal one link per category in turn so a single busy category can't fill the whole list.
+    const picked: Added[] = [];
+    for (let round = 0; picked.length < MAX_NEW && perCategory.some((list) => list.length > round); round++) {
+      for (const list of perCategory) {
+        if (list[round] && picked.length < MAX_NEW) picked.push(list[round]);
+      }
+    }
+    if (picked.length > 0) {
+      writeFileSync(NEW_FILE, JSON.stringify({ addedAt: new Date().toISOString(), items: picked }, null, 1), "utf8");
+      console.log(`${total} new since last sync (showing ${picked.length})`);
     }
   }
 

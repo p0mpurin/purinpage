@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "check-links": "tsx scripts/check-dead-links.ts",
+    "check-health": "tsx scripts/check-dead-links.ts --write-health",
     "sync-fmhy": "tsx scripts/sync-fmhy.ts"
   },
   "dependencies": {

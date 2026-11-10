@@ -5,8 +5,14 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { getEdition, subscribeEdition, toggleEdition } from "@/lib/edition";
-import SearchOverlay from "@/components/zine/SearchOverlay";
+import dynamic from "next/dynamic";
+import { TransitionSettler } from "@/components/zine/transition";
+import { useFavoritesSync } from "@/lib/favorites-sync";
+import { resetAuthGate } from "@/lib/use-auth-gate";
 import { CloseIcon, MenuIcon, MoonIcon, SearchIcon, SunIcon } from "@/components/zine/icons";
+
+// The search index holds every link, so it only downloads when search is first opened.
+const SearchOverlay = dynamic(() => import("@/components/zine/SearchOverlay"), { ssr: false });
 
 const NAV = [
   { href: "/", label: "Hub", kanji: "目次", match: (p: string) => p === "/" || p.startsWith("/category") },
@@ -28,11 +34,14 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const edition = useSyncExternalStore(subscribeEdition, getEdition, () => "day" as const);
 
+  useFavoritesSync();
+
   const closeMenu = () => setMenuOpen(false);
   const closeSearch = useCallback(() => setSearchOpen(false), []);
 
   const handleLogout = async () => {
     setMenuOpen(false);
+    resetAuthGate();
     try {
       await supabase.auth.signOut();
     } catch (error) {
@@ -57,10 +66,11 @@ export default function Navbar() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  if (pathname === "/login") return null;
+  if (pathname === "/login") return <TransitionSettler />;
 
   return (
     <>
+      <TransitionSettler />
       <header className="z-bar">
         <Link href="/" className="z-logo" onClick={closeMenu}>
           WIRED<span>/</span>SYS

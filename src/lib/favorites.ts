@@ -29,9 +29,22 @@ export function getFavorites(): LinkItem[] {
   }
 }
 
-export function saveFavorites(favs: LinkItem[]) {
+export const FAVORITES_UPDATED_KEY = "wired_sys_favorites_at_v1";
+
+/** When this browser's favorites last changed (ms since epoch), 0 if never. */
+export function getFavoritesUpdatedAt(): number {
+  try {
+    return Number(localStorage.getItem(FAVORITES_UPDATED_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** `updatedAt` is only passed when applying a copy from the account, so it isn't sent straight back. */
+export function saveFavorites(favs: LinkItem[], updatedAt: number = Date.now()) {
   if (typeof window === "undefined") return;
   try {
+    localStorage.setItem(FAVORITES_UPDATED_KEY, String(updatedAt));
     localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favs));
     window.dispatchEvent(new CustomEvent("wired_favorites_change", { detail: favs }));
   } catch {

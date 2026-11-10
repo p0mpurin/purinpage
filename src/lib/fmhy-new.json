@@ -1,0 +1,145 @@
+{
+ "addedAt": "2026-11-10T11:28:49.141Z",
+ "items": [
+  {
+   "name": "PopcornMovies",
+   "url": "https://popcornmovies.st/",
+   "description": "Movies / TV / Anime / Auto-Next / 4K",
+   "category": "Movies & TV"
+  },
+  {
+   "name": "Miruro",
+   "url": "https://miruro.cx",
+   "description": "Hard Subs / Soft Subs / Dub / Auto-Next",
+   "category": "Anime"
+  },
+  {
+   "name": "KatDrama",
+   "url": "https://k-drama.in/",
+   "description": "TV / Movies",
+   "category": "Asian Drama"
+  },
+  {
+   "name": "TimStreams",
+   "url": "https://tim-streams.com/",
+   "description": "Live Events",
+   "category": "Live TV & Sports"
+  },
+  {
+   "name": "Tiny Desk Concerts",
+   "url": "https://www.npr.org/series/tiny-desk-concerts/",
+   "description": "Intimate Concerts at NPR Headquarters / YouTube",
+   "category": "Music & Audio"
+  },
+  {
+   "name": "calibre",
+   "url": "https://calibre-ebook.com/",
+   "description": "E-Reader Book Manager / Downloader / Libraries / Tools",
+   "category": "Books & Papers"
+  },
+  {
+   "name": "Kagane",
+   "url": "https://kagane.org/",
+   "category": "Manga & Comics"
+  },
+  {
+   "name": "Lutris",
+   "url": "https://lutris.net/",
+   "description": "Game Launcher / Linux",
+   "category": "Game Tools"
+  },
+  {
+   "name": "Cloudflare 1.1.1.1",
+   "url": "https://developers.cloudflare.com/1.1.1.1/ip-addresses/",
+   "category": "AdBlockers"
+  },
+  {
+   "name": "MP Manager",
+   "url": "https://github.com/AbdurazaaqMohammed/MP-Manager",
+   "description": "Merge Split APKs",
+   "category": "Android & iOS"
+  },
+  {
+   "name": "Fluxer",
+   "url": "https://fluxer.app/",
+   "description": "Communication Platform / Discord Alt / Servers / Bots / Servers / Bots / Tools / Resources, 2 / Windows, macOS, Linux, Web",
+   "category": "Web Tools"
+  },
+  {
+   "name": "Inkscape",
+   "url": "https://inkscape.org/",
+   "description": "Drawing / Sketching / Windows, macOS, Linux",
+   "category": "Art & Assets"
+  },
+  {
+   "name": "Kenney",
+   "url": "https://www.kenney.nl/",
+   "description": "Free Game Assets",
+   "category": "Developer"
+  },
+  {
+   "name": "Gresham College",
+   "url": "https://www.gresham.ac.uk/",
+   "description": "Lectures / YouTube",
+   "category": "Education"
+  },
+  {
+   "name": "The Athletic",
+   "url": "https://www.nytimes.com/athletic/",
+   "description": "Sports News / Bypass Paywall / Mobile (search)",
+   "category": "Misc"
+  },
+  {
+   "name": "Atlantic",
+   "url": "https://atlantic.bz/",
+   "description": "Movies / TV / Anime / Auto-Next / 4K",
+   "category": "Movies & TV"
+  },
+  {
+   "name": "Gotaku",
+   "url": "https://gotaku.to/",
+   "description": "Sub / Dub / Auto-Next",
+   "category": "Anime"
+  },
+  {
+   "name": "StreamFree",
+   "url": "https://strmfree.pk/",
+   "category": "Live TV & Sports"
+  },
+  {
+   "name": "Pocket Casts",
+   "url": "https://pocketcasts.com/",
+   "description": "Cross-Platform Podcast Player / Playlists / Playback Controls / Desktop App",
+   "category": "Music & Audio"
+  },
+  {
+   "name": "Suwayomi",
+   "url": "https://github.com/Suwayomi",
+   "description": "Manga Reader / Extensions, 2 / Desktop",
+   "category": "Books & Papers"
+  },
+  {
+   "name": "Toonkotsu",
+   "url": "https://toonkotsu.com/",
+   "category": "Manga & Comics"
+  },
+  {
+   "name": "MobyGames",
+   "url": "https://www.mobygames.com/",
+   "description": "Game Release Histories / Developer Credits / Cover Art / API",
+   "category": "Game Tools"
+  },
+  {
+   "name": "Quad9",
+   "url": "https://quad9.net/",
+   "description": "Malware, Phishing, Spyware & Botnet DNS Protection",
+   "category": "AdBlockers"
+  },
+  {
+   "name": "Valenced",
+   "url": "https://valenced.app/",
+   "description": "Modded Discord Clients",
+   "category": "Android & iOS"
+  }
+ ]
+}
