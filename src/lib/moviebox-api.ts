@@ -70,8 +70,10 @@ function inCategory(item: MovieboxItem, category: string) {
 export async function browseMoviebox(category: "anime" | "movies" | "drama", query: string, page: number) {
   if (query) {
     const data = await request<RawSearch>("/subject/search", { keyword: query.slice(0, 100), page, perPage: 30 });
-    const items = (data.items || data.list || []).map(mapItem).filter((item): item is MovieboxItem => Boolean(item)).filter((item) => inCategory(item, category));
-    return { items, more: page * 30 < (data.pager?.totalCount || 0) };
+    const raw = data.items || data.list || [];
+    const items = raw.map(mapItem).filter((item): item is MovieboxItem => Boolean(item)).filter((item) => inCategory(item, category));
+    const total = data.pager?.totalCount || 0;
+    return { items, more: raw.length >= 30 && (total >= 1_000_000 || page * 30 < total) };
   }
   const home = await request<RawHome>("/home");
   const patterns = category === "anime" ? /anime/i : category === "movies" ? /movie|cinema|action|horror|comedy/i : /k-drama|c-drama|drama|bl story/i;
