@@ -1,27 +1,16 @@
 import { NextResponse } from "next/server";
-import { browseMiruro } from "@/lib/miruro-data";
 import { InternetArchiveClient } from "@/lib/archive-api";
-import { browseDrama } from "@/lib/kisskh-api";
+import { browseMoviebox } from "@/lib/moviebox-api";
 
 const archive = new InternetArchiveClient();
 
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const query = params.get("q")?.trim() || "";
-  const category = params.get("category") || "drama";
+  const category = params.get("category") || "anime";
   const page = Math.min(50, Math.max(1, Number(params.get("page")) || 1));
   try {
-    if (category === "anime") {
-      const data = await browseMiruro(query, params.get("cursor") || "");
-      return NextResponse.json({
-        items: data.items.map((item) => ({
-          id: `miruro:${item.id}`, source: "Miruro", title: item.title,
-          kind: "series", poster: item.poster, slug: item.slug,
-          url: null, description: item.description, blocked: false,
-        })), more: data.more, nextCursor: data.nextCursor,
-      });
-    }
-    if (category === "movies") {
+    if (category === "classics") {
       const terms = query.match(/[\p{L}\p{N}]+/gu)?.slice(0, 6) || [];
       const search = terms.length ? ` AND title:(${terms.join(" AND ")})` : "";
       const data = await archive.advancedSearch({
@@ -38,11 +27,12 @@ export async function GET(request: Request) {
         more: page * 24 < data.response.numFound,
       });
     }
-    const data = await browseDrama(query, page);
+    if (category !== "anime" && category !== "movies" && category !== "drama") return NextResponse.json({ error: "Invalid category" }, { status: 400 });
+    const data = await browseMoviebox(category, query, page);
     return NextResponse.json({ items: data.items.map((item) => ({
-      id: `kisskh:${item.id}`, source: "KissKH", title: item.title,
-      kind: "series", poster: item.thumbnail || null, url: null,
-      description: null, blocked: false,
+      id: `moviebox:${item.id}`, source: "MovieBox", title: item.title, slug: item.slug,
+      kind: item.kind, poster: item.poster, url: null,
+      description: item.description, blocked: false,
     })), more: data.more });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Source unavailable" }, { status: 502 });

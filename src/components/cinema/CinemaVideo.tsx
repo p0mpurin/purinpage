@@ -11,6 +11,11 @@ export default function CinemaVideo({ url, subtitles }: { url: string; subtitles
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    setError("");
+    if (!/\.m3u8(?:\?|$)/i.test(url)) {
+      video.src = url;
+      return () => { video.removeAttribute("src"); video.load(); };
+    }
     let disposed = false;
     let destroy: (() => void) | undefined;
     import("hls.js").then(({ default: Hls }) => {

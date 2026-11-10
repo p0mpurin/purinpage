@@ -4,11 +4,12 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 `/watch` now reads source catalogs through `/api/cinema`:
 
-- **Internet Archive** film listings and video files use a TypeScript client generated from a public site capture with [reverse-api-engineer](https://github.com/kalil0321/reverse-api-engineer). The capture output is in `scripts/internet_archive_movies_client/`; the application copy is `src/lib/archive-api.ts`. Browser playable files open in Cinema's own player.
-- **KissKH** supplies Asian drama listings, search, and episode metadata. The episode player URL is extracted server-side and its HLS and subtitle files are served through Cinema's media route; the external player's scripts are not loaded in the browser. The app adapter is `src/lib/kisskh-api.ts`.
-- **Miruro** anime listings, episodes, HLS sources, and subtitles come from its SvelteKit page data. The public flow was captured with `reverse-api-engineer` (run `040832f2f158`); the generated reference client is in `scripts/miruro_anime_api/`, and the app adapter is `src/lib/miruro-data.ts`. Cinema plays the stream through its own HLS player without loading Miruro's page or ad scripts.
+- **MovieBox** supplies movie, anime, and Asian drama catalogs, searches, episode details, direct video files, and subtitles. The public JSON flow was inspected with [reverse-api-engineer](https://github.com/kalil0321/reverse-api-engineer) and the [Moviebox API reference](https://github.com/faisaljs/Moviebox-API). The app adapter is `src/lib/moviebox-api.ts`. Cinema uses its own player and does not load the source site's ads or scripts.
+- **Internet Archive** supplies a separate classic-film catalog and playable video files. Its TypeScript client was generated from a public site capture with `reverse-api-engineer`; the reference is in `scripts/internet_archive_movies_client/` and the app copy is `src/lib/archive-api.ts`.
 
-Anime, Asian dramas with available sources, and playable Archive films open inside Cinema. Source availability varies by title and region; upstream APIs and signed stream URLs can change. Drama video traffic passes through the app server because the source permits playback only from its own origin, so deployment bandwidth usage may be substantial.
+Miruro and KissKH were removed from the live Cinema path after both returned HTTP 403 to the Vercel deployment. Their earlier API capture remains in `scripts/miruro_anime_api/` for reference. Playback availability still varies by title and region; upstream APIs and signed video URLs can change.
+
+MovieBox MP4s are fetched in 1 MiB byte ranges through `/api/cinema/moviebox/media` because the CDN rejects Cinema as a direct referrer. This uses Vercel function bandwidth for playback. Subtitles are converted from signed SRT files to VTT through `/api/cinema/moviebox/subtitle`.
 
 ## Getting Started
 
