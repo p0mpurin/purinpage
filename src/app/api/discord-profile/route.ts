@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 const DEV_DISCORD_ID = "553507526805684255";
+// Discord serves banners at their uploaded size at most; 1024 asks for the full-resolution file.
+const FALLBACK_BANNER = `https://cdn.discordapp.com/banners/${DEV_DISCORD_ID}/288183666656a6d4d42031c07312bafa.png?size=1024`;
 
 export async function GET() {
   try {
@@ -17,7 +19,10 @@ export async function GET() {
       if (res.ok) {
         const json = await res.json();
         if (json?.data) {
-          bannerURL = json.data.bannerURL || (json.data.banner ? `https://cdn.discordapp.com/banners/${DEV_DISCORD_ID}/${json.data.banner}.png?size=600` : null);
+          const banner: string | undefined = json.data.banner;
+          bannerURL = banner
+            ? `https://cdn.discordapp.com/banners/${DEV_DISCORD_ID}/${banner}.${banner.startsWith("a_") ? "gif" : "png"}?size=1024`
+            : json.data.bannerURL || null;
           bannerColor = json.data.banner_color || null;
           badges = json.data.public_flags_array || [];
         }
@@ -28,7 +33,7 @@ export async function GET() {
 
     // Fallback if banner URL was not returned
     if (!bannerURL) {
-      bannerURL = "https://cdn.discordapp.com/banners/553507526805684255/71b08e496d6deb8f8540d58b31eea1a5.png";
+      bannerURL = FALLBACK_BANNER;
     }
 
     // 2. Fetch live Lanyard presence (status, activities, spotify)
@@ -58,7 +63,7 @@ export async function GET() {
   } catch (err: any) {
     return NextResponse.json({
       success: true,
-      bannerURL: "https://cdn.discordapp.com/banners/553507526805684255/71b08e496d6deb8f8540d58b31eea1a5.png",
+      bannerURL: FALLBACK_BANNER,
       lanyard: null,
     });
   }

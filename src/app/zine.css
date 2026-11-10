@@ -665,13 +665,23 @@ textarea.z-input { resize: vertical; border: 2px solid var(--ink); padding: 10px
 @keyframes stamp { from { scale: 1.8; opacity: 0; rotate: -14deg; } }
 .z-soon p { margin: 0; max-width: 52ch; font-family: var(--serif); font-size: 18px; line-height: 1.45; }
 
-/* Dev: profile spread */
-.d-spread { display: grid; border-bottom: 2px solid var(--ink); }
-.d-banner { aspect-ratio: 16 / 9; }
-.d-card { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: end; gap: 16px; padding-block: 18px 22px; }
-.d-avatar { width: 96px; height: 96px; margin-top: -60px; border: 3px solid var(--paper); outline: 2px solid var(--ink); position: relative; z-index: 2; }
-.d-card h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(44px, 12vw, 96px); line-height: 0.88; text-transform: uppercase; overflow-wrap: anywhere; }
-.d-card .z-link-btn { margin-top: 8px; }
+/* Dev: profile card. The Discord banner is 736 × 259, so it keeps that shape and never grows past it. */
+.d-profile { display: grid; gap: 28px; padding-block: 28px 8px; }
+.d-print { position: relative; width: min(100%, 736px); margin: 0; padding-bottom: 44px; }
+.d-banner { aspect-ratio: 736 / 259; border: 2px solid var(--ink); background-color: var(--chip); }
+.d-avatar { position: absolute; left: 16px; bottom: 0; width: 96px; height: 96px; border: 4px solid var(--paper); outline: 2px solid var(--ink); background-color: var(--chip); }
+.d-print figcaption { position: absolute; right: 0; bottom: 12px; font: 500 10px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink2); }
+.d-facts { margin: 0; display: grid; align-content: start; border-top: 2px solid var(--ink); min-width: 0; }
+.d-facts > div { display: grid; grid-template-columns: 120px minmax(0, 1fr); align-items: baseline; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--rule); }
+.d-facts dt { font: 600 10.5px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink2); }
+.d-facts dd { margin: 0; display: flex; align-items: center; gap: 8px; min-width: 0; font: 700 16px var(--sans); overflow-wrap: anywhere; }
+.d-facts dd small { font: 500 13px var(--serif); font-style: italic; color: var(--ink2); }
+.d-facts .z-link-btn { font-size: 12px; }
+.d-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; background: var(--ink2); }
+.d-dot.online { background: var(--good); box-shadow: 0 0 0 4px color-mix(in srgb, var(--good) 22%, transparent); animation: pulse 2.4s ease-in-out infinite; }
+.d-dot.idle { background: #e0a100; }
+.d-dot.dnd { background: var(--bad); }
+@keyframes pulse { 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--good) 0%, transparent); } }
 
 /* Profile + Login forms */
 .f-spread { display: grid; gap: 28px; padding-block: 26px 10px; }
@@ -697,10 +707,9 @@ textarea.z-input { resize: vertical; border: 2px solid var(--ink); padding: 10px
   .p-head { padding-block: 40px 28px; padding-right: 180px; }
   .p-kanji { top: 32px; }
   .z-panel h2 { font-size: 40px; }
-  .d-spread { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
-  .d-banner { aspect-ratio: auto; min-height: 420px; border-right: 2px solid var(--ink); }
-  .d-card { grid-template-columns: 1fr; align-content: end; padding: 32px; }
-  .d-avatar { margin-top: 0; width: 120px; height: 120px; }
+  .d-profile { grid-template-columns: minmax(0, 736px) minmax(280px, 1fr); align-items: start; gap: 48px; padding-block: 40px 8px; }
+  .d-print { padding-bottom: 56px; }
+  .d-avatar { left: 24px; width: 120px; height: 120px; }
   .f-spread { grid-template-columns: auto minmax(0, 1fr); gap: 48px; padding-block: 40px; }
   .l-page { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-content: stretch; }
   .l-photo { aspect-ratio: auto; border-right: 2px solid var(--ink); }
