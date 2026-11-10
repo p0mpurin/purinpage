@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const runtime = "edge";
+
 const CHUNK_SIZE = 1_048_576;
 
 export async function GET(request: Request) {
