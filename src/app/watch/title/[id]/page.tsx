@@ -58,8 +58,7 @@ export default function TitleWatchPage() {
         {sourceLoading && <div className="c-player-placeholder">Loading video sources…</div>}
         {sourceError && <p role="alert" className="z-msg bad">{sourceError}</p>}
         {!loading && !sourceLoading && !source && !sourceError && <div className="c-player-placeholder">No playable video is available for this title.</div>}
-        {source && <CinemaVideo key={source.url} url={source.url} subtitles={subtitles} />}
-        {sources.length > 0 && <div className="c-quality-bar"><div><span className="c-eyebrow">Playback quality</span><strong>{source?.label || "Auto"} <small>{sourceIndex === 0 ? "Best available" : ""}</small></strong></div>{sources.length > 1 && <div className="c-quality-options" role="group" aria-label="Video quality">{sources.map((item, index) => <button key={`${item.id}-${index}`} type="button" aria-pressed={sourceIndex === index} onClick={() => setSourceIndex(index)}>{item.label}</button>)}</div>}</div>}
+        {source && <CinemaVideo url={source.url} subtitles={subtitles} title={detail?.item.title} poster={detail?.item.poster} qualities={sources.map((item) => ({ label: item.label, url: item.url }))} onQualityChange={setSourceIndex} />}
         {detail?.item.description && <details className="c-synopsis"><summary>About this title</summary><p>{detail.item.description}</p></details>}
       </section>
       {detail?.item.kind === "series" && <aside className="c-watch-side" aria-label="Episodes">
