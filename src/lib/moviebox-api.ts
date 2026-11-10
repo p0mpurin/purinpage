@@ -8,7 +8,7 @@ const BASE_HEADERS = {
   Accept: "application/json",
 };
 
-type RawSubject = { subjectId: string; subjectType: number; title: string; description?: string; detailPath: string; cover?: { url?: string }; countryName?: string; releaseDate?: string; genre?: string; hasResource?: boolean };
+type RawSubject = { subjectId: string; subjectType: number; title: string; description?: string; detailPath: string; cover?: { url?: string }; countryName?: string; releaseDate?: string; genre?: string; hasResource?: boolean; imdbRatingValue?: string; imdbRatingCount?: number };
 type RawResponse<T> = { code: number; message?: string; data: T };
 type RawHome = { operatingList: { title: string; subjects: RawSubject[] }[] };
 type RawSearch = { items?: RawSubject[]; list?: RawSubject[]; pager?: { totalCount?: number } };
@@ -29,7 +29,8 @@ function subtitleLanguage(code: string) {
   return code.replace(/_/g, "-").toLowerCase() || "und";
 }
 
-export type MovieboxItem = { id: string; title: string; slug: string; poster: string | null; kind: "movie" | "series"; description: string | null; country: string | null; genre: string | null; year: string | null };
+export type CinemaSort = "hot" | "popular" | "rated" | "newest" | "az";
+export type MovieboxItem = { id: string; title: string; slug: string; poster: string | null; kind: "movie" | "series"; description: string | null; country: string | null; genre: string | null; year: string | null; releaseDate: string | null; rating: number | null; votes: number };
 export type MovieboxDetail = { item: MovieboxItem; seasons: { number: number; episodes: number }[] };
 export type MovieboxSource = { id: string; label: string; url: string; format: string };
 export type MovieboxSubtitle = { label: string; language: string; url: string };
@@ -67,10 +68,33 @@ async function request<T>(path: string, body?: Record<string, unknown>, retry = 
 }
 
 function mapItem(raw: RawSubject): MovieboxItem | null {
-  if (!raw.subjectId || !raw.detailPath || !raw.title) return null;
+  if (!raw.subjectId || !raw.detailPath || !raw.title || ![1, 2].includes(raw.subjectType) || raw.hasResource === false) return null;
+  const rating = Number(raw.imdbRatingValue);
   return { id: raw.subjectId, title: raw.title, slug: raw.detailPath, poster: raw.cover?.url || null,
     kind: raw.subjectType === 1 ? "movie" : "series", description: raw.description || null,
-    country: raw.countryName || null, genre: raw.genre || null, year: raw.releaseDate?.slice(0, 4) || null };
+    country: raw.countryName || null, genre: raw.genre || null, year: raw.releaseDate?.slice(0, 4) || null,
+    releaseDate: raw.releaseDate || null, rating: rating > 0 && rating <= 10 ? rating : null, votes: Math.max(0, Number(raw.imdbRatingCount) || 0) };
+}
+
+function sectionRank(category: string, title: string) {
+  const ranked = category === "movies" ? ["Popular Movie", "Action Movies", "Horror Movies", "Nollywood Movie"]
+    : category === "drama" ? ["K-Drama", "C-Drama", "BL Story", "Trending Short Drama"] : ["Anime[English Dubbed]"];
+  const index = ranked.findIndex((name) => name.toLowerCase() === title.toLowerCase());
+  return index < 0 ? ranked.length : index;
+}
+
+function sortItems(items: MovieboxItem[], sort: CinemaSort) {
+  if (sort === "hot") return items;
+  const titleOrder = (a: MovieboxItem, b: MovieboxItem) => a.title.localeCompare(b.title, "en");
+  return [...items].sort((a, b) => {
+    if (sort === "az") return titleOrder(a, b);
+    if (sort === "newest") return (b.releaseDate || "").localeCompare(a.releaseDate || "") || b.votes - a.votes || titleOrder(a, b);
+    if (sort === "rated") {
+      const score = (item: MovieboxItem) => item.rating === null ? 0 : (item.votes * item.rating + 1000 * 6) / (item.votes + 1000);
+      return score(b) - score(a) || b.votes - a.votes || titleOrder(a, b);
+    }
+    return b.votes - a.votes || (b.rating || 0) - (a.rating || 0) || titleOrder(a, b);
+  });
 }
 
 function inCategory(item: MovieboxItem, category: string) {
@@ -79,7 +103,7 @@ function inCategory(item: MovieboxItem, category: string) {
   return item.kind === "series" && /korea|china|japan|thailand|taiwan|drama/i.test(`${item.country || ""} ${item.genre || ""} ${item.title}`);
 }
 
-export async function browseMoviebox(category: "anime" | "movies" | "drama", query: string, page: number) {
+export async function browseMoviebox(category: "anime" | "movies" | "drama", query: string, page: number, sort: CinemaSort = "hot") {
   if (query) {
     const data = await request<RawSearch>("/subject/search", { keyword: query.slice(0, 100), page, perPage: 30 });
     const raw = data.items || data.list || [];
@@ -90,7 +114,9 @@ export async function browseMoviebox(category: "anime" | "movies" | "drama", que
   const home = await request<RawHome>("/home");
   const patterns = category === "anime" ? /anime/i : category === "movies" ? /movie|cinema|action|horror|comedy/i : /k-drama|c-drama|drama|bl story/i;
   const seen = new Set<string>();
-  let items = home.operatingList.filter((section) => patterns.test(section.title)).flatMap((section) => section.subjects || [])
+  let items = home.operatingList.filter((section) => patterns.test(section.title) && section.subjects?.length)
+    .sort((a, b) => sectionRank(category, a.title) - sectionRank(category, b.title))
+    .flatMap((section) => section.subjects || [])
     .map(mapItem).filter((item): item is MovieboxItem => Boolean(item)).filter((item) => inCategory(item, category))
     .filter((item) => { if (seen.has(item.id)) return false; seen.add(item.id); return true; });
   if (category === "anime") {
@@ -108,7 +134,8 @@ export async function browseMoviebox(category: "anime" | "movies" | "drama", que
     }
   }
   const start = (page - 1) * 24;
-  return { items: items.slice(start, start + 24), more: start + 24 < items.length };
+  const ordered = sortItems(items, sort);
+  return { items: ordered.slice(start, start + 24), more: start + 24 < ordered.length };
 }
 
 export async function getMovieboxDetail(slug: string): Promise<MovieboxDetail> {

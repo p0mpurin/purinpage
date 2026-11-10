@@ -705,6 +705,8 @@ textarea.z-input { resize: vertical; border: 2px solid var(--ink); padding: 10px
 .c-category-tabs { display:flex; gap:6px; overflow-x:auto; padding:0 0 18px; margin-bottom:4px; scrollbar-width:thin; }
 .c-category-tabs button { flex:none; padding:11px 18px; border:1px solid transparent; border-radius:100px; background:#1d2130; color:#c3c5d2; font:700 12px var(--sans); cursor:pointer; }
 .c-category-tabs button:hover,.c-category-tabs button[aria-selected=true] { background:#f59abc; color:#171019; }
+.c-browse-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:1px 0 17px; }
+.c-browse-toolbar>span { color:#aeb2c1; font:12px var(--sans); }
 .c-feature { position:relative; display:flex; align-items:center; min-height:330px; overflow:hidden; border:1px solid #333748; border-radius:18px; color:#fff; text-decoration:none; isolation:isolate; background:linear-gradient(125deg,#272a3d,#171922); }
 .c-feature-bg { z-index:-2; object-fit:cover; object-position:center 35%; filter:blur(18px) brightness(.43) saturate(1.2); transform:scale(1.1); }
 .c-feature:after { content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(90deg,#12141e 0%,rgba(18,20,30,.9) 30%,rgba(18,20,30,.18) 100%); }
@@ -718,7 +720,10 @@ textarea.z-input { resize: vertical; border: 2px solid var(--ink); padding: 10px
 .c-feature:hover .c-feature-play { background:#fff; }
 .c-results-head { display:flex; align-items:end; justify-content:space-between; gap:12px; padding:35px 0 19px; }
 .c-results-head h2 { margin:7px 0 0; font:400 clamp(32px,3.5vw,48px)/1 var(--display); }
-.c-results-head>span { color:#969aaa; font:11px var(--mono); }
+.c-results-head>span { color:#969aaa; white-space:nowrap; font:11px var(--mono); }
+.c-sort-control { display:flex; align-items:center; gap:9px; color:#aeb2c1; white-space:nowrap; font:11px var(--sans); }
+.c-sort-control select { min-width:150px; padding:10px 31px 10px 12px; border:1px solid #4b5061; border-radius:8px; background:#252938; color:#fff; font:700 12px var(--sans); cursor:pointer; }
+.c-sort-control select:focus-visible { outline:2px solid #f59abc; outline-offset:2px; }
 .c-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:26px 16px; }
 .c-card { min-width:0; display:grid; align-content:start; gap:7px; color:#f6f5f9; text-decoration:none; }
 .c-poster { position:relative; display:grid; place-items:center; aspect-ratio:2/3; overflow:hidden; border-radius:10px; background:#252938; color:#aeb2c1; font:11px var(--mono); }
@@ -799,6 +804,7 @@ textarea.z-input { resize: vertical; border: 2px solid var(--ink); padding: 10px
 .c-episode-buttons em { margin-left:auto; color:#f59abc; font:10px var(--sans); font-style:normal; }
 @media(max-width:1050px) { .c-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
 @media(max-width:850px) { .c-cinema-intro { align-items:stretch; flex-direction:column; } .c-search { width:100%; } .c-watch-layout { grid-template-columns:1fr; } .c-watch-side { order:2; } }
+@media(max-width:680px) { .c-results-head { align-items:stretch; flex-direction:column; } .c-browse-toolbar>span { display:none; } .c-browse-toolbar { justify-content:flex-end; } }
 @media(max-width:600px) { .c-cinema { padding-top:24px; } .c-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px 12px; } .c-feature { min-height:250px; } .c-feature-art { width:105px; margin:18px 14px; } .c-feature-copy { gap:9px; padding:18px 13px 18px 0; } .c-feature-copy strong { font-size:32px; } .c-feature-desc { -webkit-line-clamp:2; font-size:11px; } .c-feature-play { padding:10px 12px; } .c-search button { padding:0 12px; } .c-watch-header { padding-top:20px; } .c-player-shell { min-height:205px; } .c-player-top { min-height:50px; padding:10px 14px; } .c-player-big-play { width:58px; height:58px; } .c-player-big-play svg { width:28px; height:28px; } .c-player-controls { padding:12px 8px 5px; } .c-player-actions button { width:31px; height:32px; } .c-player-time { margin-left:3px; font-size:10px; } .c-volume-range { display:none; } .c-player-settings { inset:8px 8px 8px auto; width:min(245px,calc(100% - 16px)); max-height:calc(100% - 16px); gap:6px; padding:10px 12px; } .c-player-settings label { gap:3px; } .c-player-settings select { padding:5px 8px; } }
 .z-soon { display: grid; gap: 22px; padding-block: 30px 10px; }
 .z-stamp {
